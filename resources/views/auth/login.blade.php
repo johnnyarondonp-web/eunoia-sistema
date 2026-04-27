@@ -40,7 +40,6 @@
             overflow: hidden;
         }
 
-        /* Orbes de fondo */
         body::before {
             content: '';
             position: fixed;
@@ -62,14 +61,8 @@
             pointer-events: none;
         }
 
-        /* Estrellas - más cantidad */
-        .sparkle {
-            position: fixed;
-            pointer-events: none;
-            animation: float 6s ease-in-out infinite;
-        }
+        .sparkle { position: fixed; pointer-events: none; animation: float 6s ease-in-out infinite; }
         .sparkle svg { fill: var(--cherry); }
-
         .sp1  { top: 8%;  left: 5%;   width: 22px; opacity: 0.18; animation-delay: 0s; }
         .sp2  { top: 20%; right: 4%;  width: 16px; opacity: 0.14; animation-delay: 1.2s; }
         .sp3  { top: 42%; left: 3%;   width: 12px; opacity: 0.12; animation-delay: 2.4s; }
@@ -86,7 +79,6 @@
             50%       { transform: translateY(-14px) rotate(18deg); }
         }
 
-        /* Card: sin fondo sólido, solo glassmorphism sutil sobre el gradiente */
         .card {
             background: rgba(255, 245, 247, 0.55);
             backdrop-filter: blur(24px);
@@ -108,22 +100,10 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* Logo Eunoia */
-        .logo-wrap {
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-        .logo-wrap img {
-            height: 52px;
-            width: auto;
-            display: inline-block;
-        }
+        .logo-wrap { text-align: center; margin-bottom: 1rem; }
+        .logo-wrap img { height: 52px; width: auto; display: inline-block; }
 
-        /* Marca */
-        .brand {
-            text-align: center;
-            margin-bottom: 2.4rem;
-        }
+        .brand { text-align: center; margin-bottom: 2.4rem; }
         .brand-name {
             font-family: 'Playfair Display', serif;
             font-size: 2.6rem;
@@ -256,6 +236,42 @@
             color: var(--cherry);
             border-bottom-color: var(--cherry-mid);
         }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-top: 1.8rem;
+        }
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(244, 143, 177, 0.3);
+        }
+        .divider-text {
+            font-size: 0.74rem;
+            color: var(--text-soft);
+            letter-spacing: 0.05em;
+        }
+
+        .register-prompt {
+            text-align: center;
+            margin-top: 1.2rem;
+        }
+        .register-prompt p {
+            font-size: 0.83rem;
+            color: var(--text-soft);
+        }
+        .register-prompt a {
+            color: var(--cherry);
+            font-weight: 500;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(198, 40, 40, 0.3);
+            transition: border-color 0.2s;
+        }
+        .register-prompt a:hover {
+            border-bottom-color: var(--cherry);
+        }
     </style>
 </head>
 <body>
@@ -270,11 +286,9 @@
     <div class="sparkle sp8"><svg viewBox="0 0 24 24"><path d="M12 2l1.5 8.5L22 12l-8.5 1.5L12 22l-1.5-8.5L2 12l8.5-1.5z"/></svg></div>
     <div class="sparkle sp9"><svg viewBox="0 0 24 24"><path d="M12 2l1.5 8.5L22 12l-8.5 1.5L12 22l-1.5-8.5L2 12l8.5-1.5z"/></svg></div>
     <div class="sparkle sp10"><svg viewBox="0 0 24 24"><path d="M12 2l1.5 8.5L22 12l-8.5 1.5L12 22l-1.5-8.5L2 12l8.5-1.5z"/></svg></div>
-    
 
     <div class="card">
 
-        {{-- Logo Enoia --}}
         <div class="logo-wrap">
             <img src="{{ asset('images/logo-eunoia.webp') }}" alt="Eunoia" />
         </div>
@@ -327,6 +341,18 @@
                 @endif
             </div>
         </form>
+
+        <div class="divider">
+            <div class="divider-line"></div>
+            <span class="divider-text">¿nuevo aquí?</span>
+            <div class="divider-line"></div>
+        </div>
+
+        @if (Route::has('register'))
+        <div class="register-prompt">
+            <p>¿No tienes cuenta? <a href="{{ route('register') }}">Crear cuenta</a></p>
+        </div>
+        @endif
 
     </div>
 </body>
