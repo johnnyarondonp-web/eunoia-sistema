@@ -19,13 +19,35 @@
 
         <div>
             <x-input-label for="name" :value="__('Nombre')" />
-            <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus autocomplete="name" />
+            <x-text-input
+                id="name"
+                name="name"
+                type="text"
+                class="mt-1 block w-full"
+                :value="old('name', $user->name)"
+                required
+                autofocus
+                autocomplete="name"
+                maxlength="20"
+                pattern="[A-Za-zÁÉÍÓÚáéíóúÑñÜü]+"
+                title="{{ __('Solo se permiten letras, sin espacios ni caracteres especiales (máx. 20 caracteres).') }}"
+                oninput="this.value = this.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñÜü]/g, '')"
+            />
             <x-input-error class="mt-2" :messages="$errors->get('name')" />
         </div>
 
         <div>
             <x-input-label for="email" :value="__('Correo electrónico')" />
-            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
+            <x-text-input
+                id="email"
+                name="email"
+                type="email"
+                class="mt-1 block w-full"
+                :value="old('email', $user->email)"
+                required
+                autocomplete="username"
+                maxlength="100"
+            />
             <x-input-error class="mt-2" :messages="$errors->get('email')" />
 
             @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
