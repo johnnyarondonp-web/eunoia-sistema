@@ -16,8 +16,8 @@ El sistema separa de forma inteligente el **flujo de caja mensual** (cuánto inv
 
 | Tecnología | Uso |
 |---|---|
-| **Laravel 11** | Framework backend (PHP) |
-| **PHP 8.2+** | Lenguaje base |
+| **Laravel 13** | Framework backend (PHP) |
+| **PHP 8.3+** | Lenguaje base |
 | **MySQL** | Base de datos relacional |
 | **Eloquent ORM** | Queries, relaciones y subqueries |
 | **Blade** | Motor de plantillas para las vistas |
@@ -80,7 +80,7 @@ La relación clave es `sale_items.expense_id → expenses.id`, que permite atrib
 ## Instalación local
 
 ### Requisitos previos
-- PHP 8.2+
+- PHP 8.3+
 - Composer
 - Node.js 18+ y npm
 - MySQL
