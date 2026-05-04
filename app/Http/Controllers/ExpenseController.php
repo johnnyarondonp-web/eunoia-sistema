@@ -11,60 +11,75 @@ class ExpenseController extends Controller
 {
     public function balance(Request $request)
     {
-        // ── 1. FILTRO ESTRICTO: solo Mes + Año ──────────────────────────────
+        // ═══════════════════════════════════════════════════════════════════════
+        //  PARÁMETROS DE FILTRO (mes y año seleccionados en la vista)
+        // ═══════════════════════════════════════════════════════════════════════
+
         $month = $request->filled('month') ? (int) $request->month : now()->month;
         $year  = $request->filled('year')  ? (int) $request->year  : now()->year;
 
-        $from    = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
-        $to      = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
-        $fromStr = $from->format('Y-m-d') . ' 00:00:00';
-        $toStr   = $to->format('Y-m-d')   . ' 23:59:59';
+        $from = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $to   = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
 
-        // ── 2. INVERSIÓN del mes ─────────────────────────────────────────────
-        $gastoMensual = Expense::whereBetween('created_at', [$fromStr, $toStr])
+        // ═══════════════════════════════════════════════════════════════════════
+        //  BLOQUE 1 — FLUJO DE CAJA MENSUAL (tarjetas de balance)
+        //
+        //  Regla: FILTRO ESTRICTO por mes/año.
+        //  Solo se cuentan compras y ventas cuya fecha caiga dentro del período.
+        // ═══════════════════════════════════════════════════════════════════════
+
+        // Inversión: lotes comprados dentro del mes filtrado
+        $gastoMensual = Expense::whereBetween('created_at', [$from, $to])
             ->sum('cost_usd');
 
-        // ── 3. VENTAS del mes ────────────────────────────────────────────────
+        // Ventas: ingresos de sale_items cuya venta padre ocurrió en el mes filtrado
         $ventasMensuales = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->whereBetween('sales.created_at', [$fromStr, $toStr])
-            ->selectRaw('COALESCE(SUM(sale_items.quantity * sale_items.price_at_sale), 0) as total')
-            ->value('total') ?? 0;
+            ->whereBetween('sales.created_at', [$from, $to])
+            ->sum(DB::raw('sale_items.quantity * sale_items.price_at_sale'));
 
-        // ── 4. GANANCIA NETA y ROI ───────────────────────────────────────────
+        $ventasMensuales = (float) ($ventasMensuales ?? 0);
+
+        // Ganancia neta y ROI del período
         $gananciaMensual = $ventasMensuales - $gastoMensual;
         $roi = $gastoMensual > 0
             ? round(($gananciaMensual / $gastoMensual) * 100, 1)
             : 0;
 
-        // ── 5. ORDENAMIENTO ──────────────────────────────────────────────────
+        // ═══════════════════════════════════════════════════════════════════════
+        //  BLOQUE 2 — RENDIMIENTO HISTÓRICO DE LOTES (tabla de desglose)
+        //
+        //  Regla: el filtro mes/año determina QUÉ lotes se muestran
+        //  (los adquiridos en ese período), pero el cálculo de ventas
+        //  asociadas a esos lotes NO lleva filtro temporal: se suma
+        //  TODO el historial de ventas de cada lote, sin importar en
+        //  qué mes futuro se hayan realizado.
+        //
+        //  Así, un lote comprado en Mayo mostrará correctamente las
+        //  ventas de Mayo, Junio, Julio… sin "congelarse" en el tiempo.
+        // ═══════════════════════════════════════════════════════════════════════
+
         $sort = $request->input('sort', '');
 
-        // ── 6. LISTADO DE LOTES ──────────────────────────────────────────────
-        //
-        // CORRECCIÓN CRÍTICA: el subquery de ventas ahora filtra por
-        // sale_items.expense_id = expenses.id  (atribución exacta por lote).
-        //
-        // Esto evita que las ventas del Lote #1 aparezcan también en el Lote #5
-        // del mismo producto. Cada venta pertenece al lote que tenía stock al
-        // momento de venderse (via expense_id que asigna el SaleController).
-        //
-        // Para sale_items con expense_id NULL (ventas antiguas sin lote asignado),
-        // se incluyen como fallback solo si el product_id coincide y el lote
-        // es el MÁS ANTIGUO del producto (menor id), evitando duplicar.
-        // ─────────────────────────────────────────────────────────────────────
-
         $query = Expense::with('product')
-            ->whereBetween('expenses.created_at', [$fromStr, $toStr])
+            // Filtrar lotes POR FECHA DE COMPRA dentro del mes/año seleccionado
+            ->whereBetween('expenses.created_at', [$from, $to])
             ->select('expenses.*')
+
+            // ── Ingresos históricos totales del lote ──────────────────────────
+            // Se suman TODAS las ventas atribuidas a este lote (expense_id),
+            // más las ventas legacy (expense_id NULL) que se asignan al lote
+            // más antiguo del mismo producto.
+            // NO se aplica ningún filtro de fecha aquí: historial completo.
             ->addSelect([
                 'total_recaudado' => DB::table('sale_items')
                     ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-                    ->whereBetween('sales.created_at', [$fromStr, $toStr])
                     ->where(function ($q) {
-                        // Caso A: venta tiene expense_id asignado → coincide exactamente
+                        // Caso A — venta con lote asignado: coincidencia exacta
                         $q->whereColumn('sale_items.expense_id', 'expenses.id')
-                          // Caso B: venta sin expense_id (legacy) → va al lote más antiguo del producto
+
+                        // Caso B — venta legacy sin expense_id:
+                        // se acumula en el lote más antiguo del producto
                           ->orWhere(function ($q2) {
                               $q2->whereNull('sale_items.expense_id')
                                  ->whereColumn('sale_items.product_id', 'expenses.product_id')
@@ -76,40 +91,63 @@ class ExpenseController extends Controller
                           });
                     })
                     ->selectRaw('COALESCE(SUM(sale_items.quantity * sale_items.price_at_sale), 0)'),
+            ])
+
+            // ── Unidades vendidas históricas del lote ─────────────────────────
+            // Misma lógica: sin filtro de fecha, historial completo.
+            ->addSelect([
+                'unidades_vendidas' => DB::table('sale_items')
+                    ->where(function ($q) {
+                        $q->whereColumn('sale_items.expense_id', 'expenses.id')
+                          ->orWhere(function ($q2) {
+                              $q2->whereNull('sale_items.expense_id')
+                                 ->whereColumn('sale_items.product_id', 'expenses.product_id')
+                                 ->whereRaw('expenses.id = (
+                                     SELECT MIN(e2.id)
+                                     FROM expenses e2
+                                     WHERE e2.product_id = expenses.product_id
+                                 )');
+                          });
+                    })
+                    ->selectRaw('COALESCE(SUM(sale_items.quantity), 0)'),
             ]);
 
-        if ($sort === 'best') {
-            $query->orderByRaw('(total_recaudado - cost_usd) DESC');
-        } elseif ($sort === 'worst') {
-            $query->orderByRaw('(total_recaudado - cost_usd) ASC');
-        } else {
-            $query->latest('expenses.created_at');
-        }
+        // ── Ordenamiento ──────────────────────────────────────────────────────
+        match ($sort) {
+            'best'  => $query->orderByRaw('(total_recaudado - cost_usd) DESC'),
+            'worst' => $query->orderByRaw('(total_recaudado - cost_usd) ASC'),
+            default => $query->latest('expenses.created_at'),
+        };
 
         $lotes = $query->get();
 
-        // ── 7. BUSCADOR en memoria ───────────────────────────────────────────
+        // ── Buscador en memoria (client-side alternativo por seguridad) ────────
         $search = $request->input('search', '');
         if ($search !== '') {
-            $lotes = $lotes->filter(function ($lote) use ($search) {
-                $name     = strtolower($lote->product->name     ?? '');
-                $category = strtolower($lote->product->category ?? '');
-                $needle   = strtolower($search);
-                return str_contains($name, $needle) || str_contains($category, $needle);
+            $needle = strtolower($search);
+            $lotes  = $lotes->filter(function ($lote) use ($needle) {
+                $haystack = strtolower(
+                    ($lote->product->name     ?? '') . ' ' .
+                    ($lote->product->category ?? '')
+                );
+                return str_contains($haystack, $needle);
             });
         }
 
-        // ── 8. Datos auxiliares para la vista ────────────────────────────────
+        // ═══════════════════════════════════════════════════════════════════════
+        //  DATOS AUXILIARES PARA LA VISTA
+        // ═══════════════════════════════════════════════════════════════════════
+
         $meses = [
-            1  => 'Enero',    2  => 'Febrero',   3  => 'Marzo',
-            4  => 'Abril',    5  => 'Mayo',       6  => 'Junio',
-            7  => 'Julio',    8  => 'Agosto',     9  => 'Septiembre',
-            10 => 'Octubre',  11 => 'Noviembre',  12 => 'Diciembre',
+            1  => 'Enero',      2  => 'Febrero',    3  => 'Marzo',
+            4  => 'Abril',      5  => 'Mayo',        6  => 'Junio',
+            7  => 'Julio',      8  => 'Agosto',      9  => 'Septiembre',
+            10 => 'Octubre',    11 => 'Noviembre',   12 => 'Diciembre',
         ];
 
-        $title     = 'Balance y Rentabilidad — ' . $meses[$month] . ' ' . $year;
-        $firstYear = Expense::min(DB::raw('YEAR(created_at)')) ?? now()->year;
+        $firstYear = (int) (Expense::min(DB::raw('YEAR(created_at)')) ?? now()->year);
         $years     = range($firstYear, now()->year);
+        $title     = 'Balance y Rentabilidad — ' . $meses[$month] . ' ' . $year;
 
         return view('expenses.balance', compact(
             'gastoMensual',
@@ -126,6 +164,10 @@ class ExpenseController extends Controller
             'search',
         ));
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    //  store() — sin cambios respecto al original
+    // ─────────────────────────────────────────────────────────────────────────
 
     public function store(Request $request)
     {

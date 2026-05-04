@@ -44,7 +44,7 @@
                         {{-- Precio / Stock / Costo --}}
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label class="block text-xs font-bold text-eunoia-text uppercase tracking-widest mb-3 ml-1">Precio Unitario ($)</label>
+                                <label class="block text-xs font-bold text-eunoia-text uppercase tracking-widest mb-3 ml-1">Precio Unitario($)</label>
                                 <input type="text" name="price" id="price-input" value="0,00$"
                                     class="w-full p-3.5 rounded-xl border border-gray-200 focus:border-eunoia-coral focus:ring-0 bg-gray-50/50 font-semibold text-gray-700 text-sm shadow-sm transition"
                                     placeholder="0,10$">
@@ -64,7 +64,7 @@
                             </div>
 
                             <div>
-                                <label class="block text-xs font-bold text-eunoia-text uppercase tracking-widest mb-3 ml-1">Costo Total Lote ($)</label>
+                                <label class="block text-xs font-bold text-eunoia-text uppercase tracking-widest mb-3 ml-1">Costo Total Lote($)</label>
                                 <input type="text" name="total_cost_usd" id="cost-input" value="0,00$"
                                     class="w-full p-3.5 rounded-xl border border-gray-200 focus:border-eunoia-coral focus:ring-0 bg-gray-50/50 font-semibold text-gray-700 text-sm shadow-sm transition"
                                     placeholder="1,00$">

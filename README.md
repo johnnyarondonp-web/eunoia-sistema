@@ -1,58 +1,171 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Eunoia — Sistema de Inventario y Ventas
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+> Sistema web para la gestión de inventario, registro de ventas y análisis de rentabilidad por lotes, diseñado para pequeños negocios de productos cosméticos y de moda.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## ¿Qué es?
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Eunoia es una aplicación web privada que permite a una emprendedora llevar el control completo de su negocio: desde registrar cada lote de mercancía comprado, hasta ver en tiempo real cuánto ha ganado con ese lote específico a lo largo del tiempo.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+El sistema separa de forma inteligente el **flujo de caja mensual** (cuánto invertí y vendí este mes) del **rendimiento histórico de cada lote** (cuánto ha generado ese lote desde que se compró, sin importar en qué mes se vendió). Esto evita el error común de "congelar" el progreso de un lote al filtrar por mes.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Stack tecnológico
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+| Tecnología | Uso |
+|---|---|
+| **Laravel 11** | Framework backend (PHP) |
+| **PHP 8.2+** | Lenguaje base |
+| **MySQL** | Base de datos relacional |
+| **Eloquent ORM** | Queries, relaciones y subqueries |
+| **Blade** | Motor de plantillas para las vistas |
+| **Tailwind CSS** | Estilos y diseño responsive |
+| **Vite** | Compilación de assets frontend |
+| **Laravel Breeze** | Autenticación (login, registro, perfil) |
+| **DolarAPI (ve.dolarapi.com)** | Tasa BCV en tiempo real con caché de 10 min |
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+---
 
-## Agentic Development
+## Funcionalidades principales
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 📦 Gestión de productos
+- Registrar productos con nombre, categoría, precio, stock e imagen
+- Al crear un producto, se genera automáticamente su primer **lote de inversión**
+- Editar precio, datos e imagen de cualquier producto
+- Agregar stock adicional desde la edición (genera un nuevo lote)
+- Activar / pausar productos (los pausados no aparecen disponibles para venta)
+- Eliminar productos con limpieza de imagen en storage
 
-```bash
-composer require laravel/boost --dev
+### 🛒 Registro de ventas
+- Formulario para registrar ventas con múltiples productos en una sola transacción
+- Lógica **FIFO** (First In, First Out): descuenta stock del lote más antiguo primero
+- Conversión automática a bolívares usando la tasa BCV del momento de la venta
+- Historial de ventas filtrable por rango de fechas
 
-php artisan boost:install
+### 📊 Balance y rentabilidad
+- **Tarjetas de flujo de caja mensual**: Inversión del mes, Ventas del mes, Ganancia Neta, ROI
+- **Tabla de lotes**: muestra todos los lotes comprados en el período seleccionado con su historial de ventas completo (sin límite de mes), porcentaje de recuperación y ganancia generada
+- Filtros por mes y año, buscador por nombre/categoría, ordenamiento por mejor/peor desempeño
+
+### 💱 Conversión de divisas
+- Integración con la API pública de DolarAPI para obtener la tasa BCV oficial
+- Resultado cacheado 10 minutos para evitar requests innecesarios
+
+---
+
+## Estructura de la base de datos
+
+```
+products
+  id · name · category · price · stock · image_path · status
+
+expenses  ← "lotes de compra"
+  id · product_id (FK) · quantity · remaining_quantity
+  cost_usd · bcv_rate · total_bs · description
+
+sales
+  id · total_usd · bcv_rate · total_bs
+
+sale_items
+  id · sale_id (FK) · product_id (FK) · expense_id (FK)
+  quantity · price_at_sale · profit
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+La relación clave es `sale_items.expense_id → expenses.id`, que permite atribuir cada unidad vendida al lote exacto del que provino, habilitando el cálculo de rentabilidad por lote.
 
-## Contributing
+---
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Instalación local
 
-## Code of Conduct
+### Requisitos previos
+- PHP 8.2+
+- Composer
+- Node.js 18+ y npm
+- MySQL
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### Pasos
 
-## Security Vulnerabilities
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/johnnyarondonp/eunoia-sistema.git
+cd eunoia-sistema
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# 2. Instalar dependencias PHP
+composer install
 
-## License
+# 3. Instalar dependencias JS
+npm install
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# 4. Configurar entorno
+cp .env.example .env
+php artisan key:generate
+
+# 5. Configurar base de datos en .env
+# DB_DATABASE=eunoia
+# DB_USERNAME=root
+# DB_PASSWORD=tu_password
+
+# 6. Ejecutar migraciones
+php artisan migrate
+
+# 7. Crear enlace de storage para imágenes
+php artisan storage:link
+
+# 8. Compilar assets
+npm run dev
+
+# 9. Iniciar servidor
+php artisan serve
+```
+
+La aplicación estará disponible en `http://localhost:8000`.
+
+---
+
+## Variables de entorno relevantes
+
+```env
+APP_NAME=Eunoia
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=eunoia
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Sin configuración extra necesaria para DolarAPI — es una API pública
+```
+
+---
+
+## Lógica de negocio destacada
+
+### Separación de Flujo de Caja vs. Rendimiento de Lote
+
+El método `balance()` en `ExpenseController` implementa dos cálculos completamente distintos:
+
+- **Tarjetas (flujo de caja):** filtran estrictamente por el mes/año seleccionado. Muestran solo lo que entró y salió de caja en ese período.
+- **Tabla de lotes (rendimiento histórico):** el filtro de mes determina *qué lotes se muestran* (los comprados en ese mes), pero las ventas asociadas se suman **sin filtro de fecha** — incluyen todo el historial de ventas de ese lote, incluso si ocurrieron en meses posteriores.
+
+### Sistema FIFO para ventas
+Cuando se registra una venta, `SaleController` descuenta el stock del **lote más antiguo con unidades disponibles** (`remaining_quantity > 0`). Si una venta requiere más unidades que las disponibles en un lote, el sistema las distribuye entre múltiples lotes automáticamente.
+
+---
+
+## Estado del proyecto
+
+El sistema está funcional en producción para uso personal. Las próximas mejoras planeadas son:
+
+- [ ] Dashboard con gráficos de ventas mensuales
+- [ ] Exportación de reportes a PDF
+- [ ] Soporte multi-usuario con roles
+
+---
+
+## Autor
+
+Desarrollado por Johnny Rondón — proyecto personal para la gestión de un emprendimiento propio.

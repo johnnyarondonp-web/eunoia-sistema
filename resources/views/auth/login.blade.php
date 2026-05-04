@@ -344,7 +344,7 @@
 
         <div class="divider">
             <div class="divider-line"></div>
-            <span class="divider-text">¿nuevo aquí?</span>
+            <span class="divider-text">¿Nuevo aquí?</span>
             <div class="divider-line"></div>
         </div>
 
