@@ -11,6 +11,7 @@ use App\Services\DolarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Carbon\Carbon;
 
 class ProductController extends Controller
@@ -59,34 +60,67 @@ class ProductController extends Controller
         $bcvRate    = $dolarService->getRate();
         $categories = config('categories');
 
-        $topPeriod = request('top_period', 'month');
-        
-        $topQuery = SaleItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
-            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->whereNull('sales.cancelled_at');
-        
-        if ($topPeriod === 'week') {
-            $topQuery->where('sales.created_at', '>=', now()->startOfWeek());
-        } elseif ($topPeriod === 'month') {
-            $topQuery->where('sales.created_at', '>=', now()->startOfMonth());
-        } elseif ($topPeriod === 'year') {
-            $topQuery->where('sales.created_at', '>=', now()->startOfYear());
-        }
-        
-        $topProductsRaw = $topQuery
-            ->groupBy('product_id')
-            ->orderByDesc('total_sold')
-            ->limit(5)
-            ->with('product')
-            ->get();
+        $getTopProducts = function ($period) {
+            $cacheKey = "top_products_{$period}";
+            $data = Cache::get($cacheKey);
 
-        $topProducts = $topProductsRaw->map(function($item) {
-            $product = $item->product;
-            $product->totalSoldTop = $item->total_sold;
-            return $product;
-        });
+            // empty() funciona sobre arrays, null, o cualquier valor falsy
+            // sin riesgo de deserializar objetos Eloquent rotos
+            if (empty($data)) {
+                Cache::forget($cacheKey);
 
-        return view('dashboard', compact('products', 'categories', 'bcvRate', 'bcvApiOk', 'topProducts', 'topPeriod'));
+                $topQuery = SaleItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
+                    ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                    ->whereNull('sales.cancelled_at');
+
+                if ($period === 'week') {
+                    $topQuery->where('sales.created_at', '>=', now()->startOfWeek());
+                } elseif ($period === 'month') {
+                    $topQuery->where('sales.created_at', '>=', now()->startOfMonth());
+                } elseif ($period === 'year') {
+                    $topQuery->where('sales.created_at', '>=', now()->startOfYear());
+                }
+
+                $results = $topQuery
+                    ->groupBy('product_id')
+                    ->orderByDesc('total_sold')
+                    ->limit(5)
+                    ->with('product')
+                    ->get()
+                    ->map(function ($item) {
+                        if (!$item->product) return null;
+                        return [
+                            'id'           => $item->product->id,
+                            'name'         => $item->product->name,
+                            'category'     => $item->product->category,
+                            'price'        => $item->product->price,
+                            'stock'        => $item->product->stock,
+                            'image_path'   => $item->product->image_path,
+                            'status'       => $item->product->status,
+                            'totalSold'    => (int) ($item->product->totalSold ?? 0),
+                            'totalSoldTop' => (int) $item->total_sold,
+                        ];
+                    })
+                    ->filter()
+                    ->values()
+                    ->toArray();
+
+                // Solo guardar en cache si hay resultados reales
+                if (!empty($results)) {
+                    Cache::put($cacheKey, $results, 3600);
+                }
+
+                $data = $results;
+            }
+
+            return $data ?? [];
+        };
+
+        $topWeek = $getTopProducts('week');
+        $topMonth = $getTopProducts('month');
+        $topYear = $getTopProducts('year');
+
+        return view('dashboard', compact('products', 'categories', 'bcvRate', 'bcvApiOk', 'topWeek', 'topMonth', 'topYear'));
     }
 
     public function create()
@@ -194,5 +228,14 @@ class ProductController extends Controller
         return redirect()->route('products.edit', $product)->with('success', $msg);
     }
 
+    public function destroy(Product $product): \Illuminate\Http\RedirectResponse
+    {
+        // Borrado suave: deleted_at queda seteado, Eloquent lo excluye de queries normales.
+        // Los SaleItems históricos que referencian este producto no se ven afectados.
+        $product->delete();
 
-}
+        return redirect()->route('dashboard')
+            ->with('success', 'Producto archivado correctamente.');
+    }
+
+}

@@ -4,17 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Sale;
-use App\Models\Expense; 
+use App\Models\Expense;
 use App\Services\DolarService;
+use App\Services\LotDeductionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class SaleController extends Controller
 {
-    public function setManualRate(Request $request, DolarService $dolarService)
+    public function __construct(
+        private readonly DolarService $dolarService,
+        private readonly LotDeductionService $lotDeductionService,
+    ) {}
+
+    public function setManualRate(Request $request)
     {
         $request->validate(['bcv_rate' => 'required|numeric|min:1|max:9999']);
-        $dolarService->setManualRate((float)$request->bcv_rate);
+        $this->dolarService->setManualRate((float) $request->bcv_rate);
         return back()->with('success', 'Tasa actualizada correctamente.');
     }
 
@@ -31,33 +38,34 @@ class SaleController extends Controller
         return view('sales.index', compact('sales', 'title', 'from', 'to'));
     }
 
-    public function create(DolarService $dolarService)
+    public function create()
     {
         $products = Product::where('stock', '>', 0)->orderBy('name', 'asc')->get();
-        $bcvRate = $dolarService->getRate();
+        $bcvRate = $this->dolarService->getRate();
 
         return view('sales.create', compact('products', 'bcvRate'));
     }
 
-    public function store(\App\Http\Requests\StoreSaleRequest $request, DolarService $dolarService)
+    public function store(\App\Http\Requests\StoreSaleRequest $request)
     {
+        $bcvRate = $request->filled('bcv_rate')
+            ? (float) $request->bcv_rate
+            : $this->dolarService->getRate();
 
-
-        $bcvRate = $request->filled('bcv_rate') ? (float) $request->bcv_rate : $dolarService->getRate();
         $totalSaleUsd = 0;
 
         try {
             DB::transaction(function () use ($request, $bcvRate, &$totalSaleUsd) {
                 $sale = Sale::create([
-                    'user_id' => auth()->id(),
+                    'user_id'   => auth()->id(),
                     'total_usd' => 0,
-                    'bcv_rate' => $bcvRate,
-                    'total_bs' => 0,
+                    'bcv_rate'  => $bcvRate,
+                    'total_bs'  => 0,
                 ]);
 
                 foreach ($request->items as $item) {
                     $product = Product::lockForUpdate()->find($item['product_id']);
-                    $quantityToSell = (int)$item['quantity'];
+                    $quantityToSell = (int) $item['quantity'];
 
                     if (!$product->status) {
                         throw new \Exception("El producto '{$product->name}' está pausado y no puede venderse.");
@@ -67,37 +75,14 @@ class SaleController extends Controller
                         throw new \Exception("Stock insuficiente para: {$product->name}");
                     }
 
-                    $remainingToProcess = $quantityToSell;
-                    while ($remainingToProcess > 0) {
-                        $lot = Expense::where('product_id', $product->id)
-                                      ->where('remaining_quantity', '>', 0)
-                                      ->lockForUpdate()
-                                      ->oldest()
-                                      ->first();
-
-                        if (!$lot) {
-                            throw new \Exception("Error: No se encontró stock en lotes para {$product->name}");
-                        }
-
-                        // CORRECCIÓN: Usamos 'cost_usd' que es el nombre correcto en tu base de datos
-                        $originalQty = $lot->quantity > 0 ? $lot->quantity : 1; 
-                        $unitCostUsd = $lot->cost_usd / $originalQty; 
-
-                        $takeFromThisLot = min($remainingToProcess, $lot->remaining_quantity);
-                        
-                        $profitPerItem = round($product->price - $unitCostUsd, 2);
-                        
-                        $sale->items()->create([
-                            'product_id' => $product->id,
-                            'expense_id' => $lot->id,
-                            'quantity' => $takeFromThisLot,
-                            'price_at_sale' => $product->price,
-                            'profit' => $profitPerItem * $takeFromThisLot
-                        ]);
-
-                        $lot->decrement('remaining_quantity', $takeFromThisLot);
-                        $remainingToProcess -= $takeFromThisLot;
-                    }
+                    // El FIFO y la creación de SaleItems viven en el servicio.
+                    // La transacción los envuelve aquí, no dentro del servicio.
+                    $this->lotDeductionService->deduct(
+                        $product,
+                        $quantityToSell,
+                        $sale,
+                        $product->price
+                    );
 
                     $product->decrement('stock', $quantityToSell);
                     $totalSaleUsd += ($product->price * $quantityToSell);
@@ -105,9 +90,13 @@ class SaleController extends Controller
 
                 $sale->update([
                     'total_usd' => $totalSaleUsd,
-                    'total_bs' => $totalSaleUsd * $bcvRate,
+                    'total_bs'  => $totalSaleUsd * $bcvRate,
                 ]);
             });
+
+            Cache::forget('top_products_week');
+            Cache::forget('top_products_month');
+            Cache::forget('top_products_year');
 
             return redirect()->route('sales.index')->with('success', 'Venta registrada correctamente.');
         } catch (\Exception $e) {
@@ -143,6 +132,11 @@ class SaleController extends Controller
                 'cancel_reason' => $request->cancel_reason,
             ]);
         });
+        
+        Cache::forget('top_products_week');
+        Cache::forget('top_products_month');
+        Cache::forget('top_products_year');
+
         return back()->with('success', 'Venta cancelada y stock restaurado.');
     }
 }

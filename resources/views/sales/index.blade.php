@@ -112,11 +112,17 @@
         });
 
         // Redirección automática al cambiar fechas
+        let dateFilterTimeout;
         document.querySelectorAll('.auto-filter').forEach(input => {
             input.addEventListener('change', () => {
-                const from = document.getElementById('filter-from').value;
-                const to = document.getElementById('filter-to').value;
-                window.location.href = `{{ route('sales.index') }}?from=${from}&to=${to}`;
+                clearTimeout(dateFilterTimeout);
+                dateFilterTimeout = setTimeout(() => {
+                    const from = document.getElementById('filter-from').value;
+                    const to = document.getElementById('filter-to').value;
+                    if (from && to) {
+                        window.location.href = `{{ route('sales.index') }}?from=${from}&to=${to}`;
+                    }
+                }, 300);
             });
         });
 
@@ -146,11 +152,17 @@
         });
     </script>
 
-    <div id="cancelModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40">
-        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4">
-            <p class="text-sm font-semibold text-gray-700 mb-4">
-                ¿Seguro que deseas cancelar esta venta? Se restaurará el stock.
-            </p>
+    <div id="cancelModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/20 backdrop-blur-[2px]">
+        <div class="bg-white rounded-3xl border border-gray-100 shadow-xl p-8 max-w-sm w-full mx-4">
+            <div class="bg-red-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            
+            <h3 class="text-lg font-bold text-gray-800 uppercase tracking-tighter text-center">¿Seguro que deseas cancelar esta venta?</h3>
+            <p class="text-xs text-gray-400 uppercase tracking-widest mt-1 mb-4 text-center">Se restaurará el stock automáticamente</p>
             <div class="mb-5">
                 <label class="text-[9px] uppercase tracking-widest font-bold text-gray-400 block mb-1">Motivo de cancelación</label>
                 <textarea id="cancel_reason" name="cancel_reason" rows="2" required

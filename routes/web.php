@@ -27,7 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/productos', [ProductController::class, 'store'])->name('products.store');
     Route::get('/productos/{product}/editar', [ProductController::class, 'edit'])->name('products.edit');
     Route::patch('/productos/{product}', [ProductController::class, 'update'])->name('products.update');
-    // Route::delete('/productos/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::delete('/productos/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
     // Ventas
     Route::prefix('ventas')->group(function () {

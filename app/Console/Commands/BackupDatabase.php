@@ -25,13 +25,13 @@ class BackupDatabase extends Command
 
         $filename = $dir . '/backup-' . now()->format('Y-m-d') . '.sql';
 
-        // Construir comando sin mostrar la contraseña en logs de proceso
+        // --password= aparece en 'ps aux' — MYSQL_PWD no, porque va como entorno del proceso hijo
         $cmd = sprintf(
-            'mysqldump --host=%s --port=%s --user=%s --password=%s %s > %s 2>&1',
+            'MYSQL_PWD=%s mysqldump --host=%s --port=%s --user=%s %s > %s 2>&1',
+            escapeshellarg($password),
             escapeshellarg($host),
             escapeshellarg($port),
             escapeshellarg($user),
-            escapeshellarg($password),
             escapeshellarg($database),
             escapeshellarg($filename)
         );

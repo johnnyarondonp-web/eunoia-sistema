@@ -164,7 +164,7 @@
                         @if($bcvApiOk)
                             <div class="bg-white border border-gray-200 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-2">
                                 <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0" title="API Activa"></span>
-                                <span class="text-xs font-black text-gray-600 uppercase tracking-widest whitespace-nowrap">BCV Oficial:</span>
+                                <span class="text-xs font-black text-gray-600 uppercase tracking-widest whitespace-nowrap">Tasa BCV:</span>
                                 <span class="text-sm font-bold text-gray-800">{{ number_format($bcvRate, 2, '.', '') }} Bs.</span>
                             </div>
                         @else
@@ -293,69 +293,15 @@
                     <h3 class="font-cormorant text-2xl font-light text-eunoia-text tracking-wide">Lo Más Vendido</h3>
                     <div class="flex-1 h-px bg-gray-100"></div>
                     <div class="flex gap-2">
-                        <a href="?top_period=week" class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-gray-200 shadow-sm {{ $topPeriod === 'week' ? 'active' : 'bg-white' }}">Semana</a>
-                        <a href="?top_period=month" class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-gray-200 shadow-sm {{ $topPeriod === 'month' ? 'active' : 'bg-white' }}">Mes</a>
-                        <a href="?top_period=year" class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-gray-200 shadow-sm {{ $topPeriod === 'year' ? 'active' : 'bg-white' }}">Año</a>
+                        <button type="button" onclick="setTopPeriod('week')" id="top-btn-week" class="filter-btn active text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-gray-200 shadow-sm">Semana</button>
+                        <button type="button" onclick="setTopPeriod('month')" id="top-btn-month" class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-gray-200 shadow-sm bg-white">Mes</button>
+                        <button type="button" onclick="setTopPeriod('year')" id="top-btn-year" class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-gray-200 shadow-sm bg-white">Año</button>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10" id="topGrid">
-                    @forelse($topProducts as $product)
-                        <div class="product-card bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-50 group relative"
-                             data-name="{{ strtolower($product->name) }}"
-                             data-category="{{ strtolower($product->category) }}"
-                             data-status="{{ $product->status }}"
-                             data-sold="{{ $product->totalSold ?? 0 }}">
-
-                            <div class="absolute top-4 left-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <a href="{{ route('products.edit', $product) }}"
-                                   class="bg-white/90 backdrop-blur-md p-2 rounded-full shadow-sm text-gray-600 hover:text-eunoia-coral transition">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-                                    </svg>
-                                </a>
-                            </div>
-
-                            {{-- TOP badge --}}
-                            <div class="absolute top-3 right-3 z-10 bg-eunoia-coral text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow">
-                                Top
-                            </div>
-
-                            <div class="h-48 overflow-hidden relative">
-                                @if($product->image_path)
-                                    <img src="{{ asset('storage/' . $product->image_path) }}"
-                                         class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700">
-                                @else
-                                    <div class="w-full h-full bg-gray-50 flex items-center justify-center">
-                                        <span class="text-[10px] text-gray-300 font-bold uppercase tracking-tighter">Sin imagen</span>
-                                    </div>
-                                @endif
-                                @if($product->stock <= 0)
-                                    <div class="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
-                                        <span class="bg-red-500 text-white text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest shadow-lg">Agotado</span>
-                                    </div>
-                                @endif
-                            </div>
-
-                            <div class="p-4 text-center">
-                                <span class="text-[9px] font-black text-eunoia-coral uppercase tracking-[0.2em] mb-1 block">{{ $product->category }}</span>
-                                <h3 class="text-xs font-bold text-eunoia-text truncate mb-1">{{ $product->name }}</h3>
-                                <p class="text-base font-serif text-eunoia-text opacity-90">${{ number_format($product->price, 2) }}</p>
-                                <p class="text-[9px] font-bold text-gray-400">≈ {{ number_format($product->price * $bcvRate, 2, ',', '.') }} Bs.</p>
-                                <div class="mt-2 pt-2 border-t border-gray-50">
-                                    <span class="text-[9px] font-bold text-eunoia-coral uppercase tracking-widest">
-                                        {{ $product->totalSoldTop ?? 0 }} vendidos
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="col-span-full py-10 text-center">
-                            <p class="text-gray-400 text-xs font-bold uppercase tracking-widest">Sin datos de ventas aún</p>
-                        </div>
-                    @endforelse
+                    <!-- Los cards se renderizarán vía JS -->
                 </div>
-
                 {{-- Divider before the rest --}}
                 <div class="flex items-center gap-3 mb-5">
                     <h3 class="font-cormorant text-2xl font-light text-eunoia-text tracking-wide">Todos los Productos</h3>
@@ -405,7 +351,7 @@
 
                         <div class="h-64 overflow-hidden relative">
                             @if($product->image_path)
-                                <img src="{{ asset('storage/' . $product->image_path) }}"
+                                <img src="{{ asset('storage/' . $product->image_path) }}" loading="lazy"
                                      class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 {{ $product->status == 0 ? 'opacity-50 grayscale' : '' }}">
                             @else
                                 <div class="w-full h-full bg-gray-50 flex items-center justify-center">
@@ -467,6 +413,19 @@
         // Ventas-specific state
         let ventasAsc      = false;  // false = más vendido primero
         let ventasPeriod   = 'lifetime'; // 'lifetime' | 'weekly' | 'monthly'
+
+        const TOP_DATA = {
+            week:  @json($topWeek),
+            month: @json($topMonth),
+            year:  @json($topYear),
+        };
+
+        // Debug: Verificar si los datos llegan vacíos desde el servidor
+        if (TOP_DATA.week.length === 0) console.warn('TOP_DATA vacío para week (Servidor)');
+        if (TOP_DATA.month.length === 0) console.warn('TOP_DATA vacío para month (Servidor)');
+        if (TOP_DATA.year.length === 0) console.warn('TOP_DATA vacío para year (Servidor)');
+
+        const BCV_RATE = {{ $bcvRate }};
 
         // ─── DATE HELPERS ────────────────────────────────────────────────────────
         const NOW         = new Date();
@@ -722,9 +681,97 @@
             renderCards(cards, visible);
         }
 
+        // ─── TOP SECTION JS RENDER ────────────────────────────────────────────────
+        function setTopPeriod(period) {
+            // Update buttons
+            ['week', 'month', 'year'].forEach(p => {
+                const btn = document.getElementById('top-btn-' + p);
+                if (btn) {
+                    if (p === period) {
+                        btn.classList.add('active');
+                        btn.classList.remove('bg-white');
+                    } else {
+                        btn.classList.remove('active');
+                        btn.classList.add('bg-white');
+                    }
+                }
+            });
+
+            const grid = document.getElementById('topGrid');
+            grid.innerHTML = '';
+            
+            const data = TOP_DATA[period] || [];
+            
+            if (data.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-10 text-center">
+                        <p class="text-gray-400 text-xs font-bold uppercase tracking-widest">Sin datos de ventas aún</p>
+                    </div>`;
+                return;
+            }
+
+            data.forEach(product => {
+                const priceBs = (product.price * BCV_RATE).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const priceUsd = Number(product.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const imageHtml = product.image_path 
+                    ? `<img src="/storage/${product.image_path}" loading="lazy" class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700">`
+                    : `<div class="w-full h-full bg-gray-50 flex items-center justify-center"><span class="text-[10px] text-gray-300 font-bold uppercase tracking-tighter">Sin imagen</span></div>`;
+                
+                const stockHtml = product.stock <= 0 
+                    ? `<div class="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center"><span class="bg-red-500 text-white text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest shadow-lg">Agotado</span></div>`
+                    : '';
+
+                const html = `
+                    <div class="product-card bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-50 group relative"
+                         data-name="${(product.name || '').toLowerCase()}"
+                         data-category="${(product.category || '').toLowerCase()}"
+                         data-status="${product.status}"
+                         data-sold="${product.totalSold || 0}">
+
+                        <div class="absolute top-4 left-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <a href="/productos/${product.id}/editar"
+                               class="bg-white/90 backdrop-blur-md p-2 rounded-full shadow-sm text-gray-600 hover:text-eunoia-coral transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                </svg>
+                            </a>
+                        </div>
+
+                        <div class="absolute top-3 right-3 z-10 bg-eunoia-coral text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow">
+                            Top
+                        </div>
+
+                        <div class="h-48 overflow-hidden relative">
+                            ${imageHtml}
+                            ${stockHtml}
+                        </div>
+
+                        <div class="p-4 text-center">
+                            <span class="text-[9px] font-black text-eunoia-coral uppercase tracking-[0.2em] mb-1 block">${product.category || ''}</span>
+                            <h3 class="text-xs font-bold text-eunoia-text truncate mb-1">${product.name || ''}</h3>
+                            <p class="text-base font-serif text-eunoia-text opacity-90">$${priceUsd}</p>
+                            <p class="text-[9px] font-bold text-gray-400">≈ ${priceBs} Bs.</p>
+                            <div class="mt-2 pt-2 border-t border-gray-50">
+                                <span class="text-[9px] font-bold text-eunoia-coral uppercase tracking-widest">
+                                    ${product.totalSoldTop || 0} vendidos
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
         // ─── INIT ─────────────────────────────────────────────────────────────────
         (function init() {
             showDefaultHome();
+            
+            // Check for top_period in URL or use default
+            const urlParams = new URLSearchParams(window.location.search);
+            const periodParam = urlParams.get('top_period');
+            const initialPeriod = ['week', 'month', 'year'].includes(periodParam) ? periodParam : 'month';
+            setTopPeriod(initialPeriod);
         })();
     </script>
 </x-app-layout>
