@@ -254,24 +254,7 @@
             letter-spacing: 0.05em;
         }
 
-        .register-prompt {
-            text-align: center;
-            margin-top: 1.2rem;
-        }
-        .register-prompt p {
-            font-size: 0.83rem;
-            color: var(--text-soft);
-        }
-        .register-prompt a {
-            color: var(--cherry);
-            font-weight: 500;
-            text-decoration: none;
-            border-bottom: 1px solid rgba(198, 40, 40, 0.3);
-            transition: border-color 0.2s;
-        }
-        .register-prompt a:hover {
-            border-bottom-color: var(--cherry);
-        }
+
     </style>
 </head>
 <body>
@@ -342,17 +325,7 @@
             </div>
         </form>
 
-        <div class="divider">
-            <div class="divider-line"></div>
-            <span class="divider-text">¿Nuevo aquí?</span>
-            <div class="divider-line"></div>
-        </div>
 
-        @if (Route::has('register'))
-        <div class="register-prompt">
-            <p>¿No tienes cuenta? <a href="{{ route('register') }}">Crear cuenta</a></p>
-        </div>
-        @endif
 
     </div>
 </body>

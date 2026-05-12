@@ -46,16 +46,23 @@
                                 <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400 text-right">Tasa BCV</th>
                                 <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400 text-right">Total ($)</th>
                                 <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400 text-right">Total (Bs.)</th>
+                                <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400 text-right">Acción</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-50">
                             @foreach($sales as $sale)
-                            <tr class="hover:bg-gray-50 transition-colors sale-row" 
+                            <tr class="hover:bg-gray-50 transition-colors sale-row {{ $sale->cancelled_at ? 'opacity-50 line-through' : '' }}" 
                                 data-products="{{ $sale->items->pluck('product.name')->join(' ') }}"
                                 data-category="{{ $sale->items->pluck('product.category')->join(' ') }}">
                                 <td class="py-4 text-sm text-gray-600 font-mono">
                                     {{ $sale->created_at->format('d/m/Y') }}
                                     <span class="block text-[10px] text-gray-400 uppercase">{{ $sale->created_at->format('h:i A') }}</span>
+                                    @if($sale->cancelled_at)
+                                        <span class="inline-block mt-1 px-2 py-0.5 bg-red-100 text-red-800 text-[8px] font-bold uppercase rounded no-underline">Cancelada</span>
+                                        @if($sale->cancel_reason)
+                                            <span class="block text-[9px] text-gray-400 italic mt-0.5">{{ $sale->cancel_reason }}</span>
+                                        @endif
+                                    @endif
                                 </td>
                                 <td class="py-4">
                                     @foreach($sale->items as $item)
@@ -72,6 +79,17 @@
                                 <td class="py-4 text-right text-xs text-gray-400 font-mono">{{ number_format($sale->bcv_rate, 2, ',', '.') }}</td>
                                 <td class="py-4 text-right font-bold text-gray-800">${{ number_format($sale->total_usd, 2, ',', '.') }}</td>
                                 <td class="py-4 text-right font-bold text-indigo-600">{{ number_format($sale->total_bs, 2, ',', '.') }} Bs.</td>
+                                <td class="py-4 text-right">
+                                    @if(is_null($sale->cancelled_at))
+                                        <button type="button" 
+                                                onclick="openCancelModal('{{ route('sales.cancel', $sale) }}')"
+                                                class="text-red-500 hover:text-red-700 text-[10px] uppercase font-bold tracking-widest no-underline">
+                                          Cancelar
+                                        </button>
+                                    @else
+                                        <span class="text-gray-400 text-[10px] uppercase font-bold no-underline">N/A</span>
+                                    @endif
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -101,5 +119,56 @@
                 window.location.href = `{{ route('sales.index') }}?from=${from}&to=${to}`;
             });
         });
+
+        function openCancelModal(url) {
+            document.getElementById('cancelForm').action = url;
+            document.getElementById('cancel_reason').value = '';
+            document.getElementById('cancel-reason-error').classList.add('hidden');
+            const modal = document.getElementById('cancelModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+        function closeCancelModal() {
+            const modal = document.getElementById('cancelModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+        document.getElementById('cancelModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCancelModal();
+        });
+        // Validar que el motivo no esté vacío antes de enviar
+        document.getElementById('cancelForm').addEventListener('submit', function(e) {
+            const reason = document.getElementById('cancel_reason').value.trim();
+            if (reason.length < 5) {
+                e.preventDefault();
+                document.getElementById('cancel-reason-error').classList.remove('hidden');
+            }
+        });
     </script>
+
+    <div id="cancelModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4">
+            <p class="text-sm font-semibold text-gray-700 mb-4">
+                ¿Seguro que deseas cancelar esta venta? Se restaurará el stock.
+            </p>
+            <div class="mb-5">
+                <label class="text-[9px] uppercase tracking-widest font-bold text-gray-400 block mb-1">Motivo de cancelación</label>
+                <textarea id="cancel_reason" name="cancel_reason" rows="2" required
+                    placeholder="Ej: cliente arrepentido, error al registrar..."
+                    class="border border-gray-200 rounded-xl text-sm px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-red-200 resize-none"></textarea>
+                <p id="cancel-reason-error" class="hidden text-[9px] text-red-500 font-bold mt-1">El motivo debe tener al menos 5 caracteres.</p>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button onclick="closeCancelModal()" class="px-4 py-2 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-gray-700">
+                    No cancelar
+                </button>
+                <form id="cancelForm" method="POST">
+                    @csrf @method('PATCH')
+                    <button type="submit" class="px-4 py-2 text-xs font-bold uppercase tracking-widest bg-red-500 text-white rounded-xl hover:bg-red-600">
+                        Confirmar cancelación
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </x-app-layout>

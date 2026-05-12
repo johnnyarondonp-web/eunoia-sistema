@@ -14,7 +14,9 @@ class Sale extends Model
         'total_usd', 
         'bcv_rate', 
         'total_bs',
-        'user_id' // Agregué este porque en el controlador lo estamos guardando
+        'user_id',
+        'cancelled_at',
+        'cancel_reason',
     ];
 
     /**

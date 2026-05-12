@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Expense;
+use App\Models\SaleItem;
+use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
 use App\Services\DolarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -12,10 +15,6 @@ use Carbon\Carbon;
 
 class ProductController extends Controller
 {
-    // Categorías centralizadas — un solo lugar para editar
-    private array $categories = [
-        'Maquillaje', 'Cosméticos', 'Perfumería', 'Cuidado Facial', 'Ropa', 'Accesorios',
-    ];
 
     public function index(DolarService $dolarService)
     {
@@ -56,28 +55,48 @@ class ProductController extends Controller
             $product->weeklySold = (int) ($product->weeklySold ?? 0);
         });
 
-        $bcvRate    = $dolarService->getBcvRate() ?? 45.00;
-        $categories = $this->categories;
+        $bcvApiOk   = $dolarService->getBcvRate() !== null;
+        $bcvRate    = $dolarService->getRate();
+        $categories = config('categories');
 
-        return view('dashboard', compact('products', 'categories', 'bcvRate'));
+        $topPeriod = request('top_period', 'month');
+        
+        $topQuery = SaleItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->whereNull('sales.cancelled_at');
+        
+        if ($topPeriod === 'week') {
+            $topQuery->where('sales.created_at', '>=', now()->startOfWeek());
+        } elseif ($topPeriod === 'month') {
+            $topQuery->where('sales.created_at', '>=', now()->startOfMonth());
+        } elseif ($topPeriod === 'year') {
+            $topQuery->where('sales.created_at', '>=', now()->startOfYear());
+        }
+        
+        $topProductsRaw = $topQuery
+            ->groupBy('product_id')
+            ->orderByDesc('total_sold')
+            ->limit(5)
+            ->with('product')
+            ->get();
+
+        $topProducts = $topProductsRaw->map(function($item) {
+            $product = $item->product;
+            $product->totalSoldTop = $item->total_sold;
+            return $product;
+        });
+
+        return view('dashboard', compact('products', 'categories', 'bcvRate', 'bcvApiOk', 'topProducts', 'topPeriod'));
     }
 
     public function create()
     {
-        $categories = $this->categories;
+        $categories = config('categories');
         return view('products.create', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(StoreProductRequest $request)
     {
-        $request->validate([
-            'name'           => 'required|string|max:40',
-            'category'       => 'required|string',
-            'price'          => 'required|numeric|min:0',
-            'stock'          => 'required|integer|min:1',
-            'total_cost_usd' => 'required|numeric|min:0',
-            'image'          => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
-        ]);
 
         try {
             DB::transaction(function () use ($request) {
@@ -112,20 +131,12 @@ class ProductController extends Controller
 
     public function edit(Product $product)
     {
-        $categories = $this->categories;
+        $categories = config('categories');
         return view('products.edit', compact('product', 'categories'));
     }
 
-    public function update(Request $request, Product $product)
+    public function update(UpdateProductRequest $request, Product $product)
     {
-        $request->validate([
-            'name'           => 'required|string|max:40',
-            'price'          => 'required|numeric|min:0',
-            'category'       => 'required|string',
-            // stock = UNIDADES ADICIONALES a agregar (no el total nuevo)
-            'stock'          => 'nullable|integer|min:1',
-            'cost_usd'       => 'nullable|numeric|min:0',
-        ]);
 
         try {
             DB::transaction(function () use ($request, $product) {
@@ -183,12 +194,5 @@ class ProductController extends Controller
         return redirect()->route('products.edit', $product)->with('success', $msg);
     }
 
-    public function destroy(Product $product)
-    {
-        if ($product->image_path) {
-            Storage::disk('public')->delete($product->image_path);
-        }
-        $product->delete();
-        return redirect()->route('dashboard')->with('success', 'Producto eliminado.');
-    }
+
 }

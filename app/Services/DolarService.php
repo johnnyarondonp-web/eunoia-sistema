@@ -2,41 +2,69 @@
 
 namespace App\Services;
 
+use App\Models\ExchangeRate;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 
 class DolarService
 {
-    public function getBcvRate()
+    public const DEFAULT_RATE = 48.00;
+
+    public function getRate(): float
     {
-        // Bajamos el tiempo de caché a 10 minutos (600s) para pruebas, luego lo subes a 3600
-        return Cache::remember('bcv_rate', 600, function () {
-            try {
-                // Agregamos withoutVerifying() por si tu entorno local no tiene certificados SSL actualizados
-                $response = Http::timeout(10)
-                    ->withoutVerifying() 
-                    ->get('https://ve.dolarapi.com/v1/dolares/oficial');
-                
-                if ($response->successful()) {
-                    $data = $response->json();
-                    
-                    // Verificamos que la llave 'promedio' exista antes de usarla
-                    if (isset($data['promedio'])) {
-                        return (float) $data['promedio'];
-                    }
-                    
-                    Log::error("DolarApi: La respuesta no contiene la llave 'promedio'.");
-                }
+        // Prioridad: caché rápida → DB (tasa manual persistida) → API BCV → hardcode
+        if (Cache::has('manual_bcv_rate')) {
+            return (float) Cache::get('manual_bcv_rate');
+        }
 
-                Log::error("DolarApi falló con estado: " . $response->status());
-                return null;
+        $dbRate = ExchangeRate::where('source', 'manual')->latest()->value('rate');
+        if ($dbRate !== null) {
+            // Reconstruir caché para las próximas requests del mismo deploy
+            Cache::put('manual_bcv_rate', $dbRate, now()->addDays(7));
+            return (float) $dbRate;
+        }
 
-            } catch (\Exception $e) {
-                // Esto nos dirá exactamente qué pasó en storage/logs/laravel.log
-                Log::error("Error crítico en DolarService: " . $e->getMessage());
-                return null;
+        $bcv = $this->getBcvRate();
+        if ($bcv !== null) {
+            return $bcv;
+        }
+
+        return self::DEFAULT_RATE;
+    }
+
+    public function setManualRate(float $rate): void
+    {
+        // Persiste en DB (sobrevive reinicios) y en caché (velocidad)
+        ExchangeRate::create(['rate' => $rate, 'source' => 'manual']);
+        Cache::put('manual_bcv_rate', $rate, now()->addDays(7));
+    }
+
+    public function getBcvRate(): ?float
+    {
+        $cached = Cache::get('bcv_rate_official');
+        if ($cached !== null) return (float) $cached;
+
+        try {
+            $http = Http::timeout(10);
+            if (app()->environment('local')) {
+                $http = $http->withoutVerifying();
             }
-        });
+            $response = $http->get('https://ve.dolarapi.com/v1/dolares/oficial');
+
+            if (!$response->successful()) return null;
+
+            $data = $response->json();
+            $rate = $data['promedio'] ?? $data['venta'] ?? null;
+
+            if ($rate) {
+                Cache::put('bcv_rate_official', $rate, now()->addMinutes(30));
+                return (float) $rate;
+            }
+
+            return null;
+
+        } catch (\Exception $e) {
+            return null;
+        }
     }
 }

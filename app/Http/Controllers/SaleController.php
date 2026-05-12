@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\DB;
 
 class SaleController extends Controller
 {
+    public function setManualRate(Request $request, DolarService $dolarService)
+    {
+        $request->validate(['bcv_rate' => 'required|numeric|min:1|max:9999']);
+        $dolarService->setManualRate((float)$request->bcv_rate);
+        return back()->with('success', 'Tasa actualizada correctamente.');
+    }
+
     public function index(Request $request)
     {
         $query = Sale::with('items.product');
@@ -27,25 +34,22 @@ class SaleController extends Controller
     public function create(DolarService $dolarService)
     {
         $products = Product::where('stock', '>', 0)->orderBy('name', 'asc')->get();
-        $bcvRate = $dolarService->getBcvRate() ?? 48.00;
+        $bcvRate = $dolarService->getRate();
 
         return view('sales.create', compact('products', 'bcvRate'));
     }
 
-    public function store(Request $request, DolarService $dolarService)
+    public function store(\App\Http\Requests\StoreSaleRequest $request, DolarService $dolarService)
     {
-        $request->validate([
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
-        ]);
 
-        $bcvRate = $dolarService->getBcvRate() ?? 48.00;
+
+        $bcvRate = $request->filled('bcv_rate') ? (float) $request->bcv_rate : $dolarService->getRate();
         $totalSaleUsd = 0;
 
         try {
             DB::transaction(function () use ($request, $bcvRate, &$totalSaleUsd) {
                 $sale = Sale::create([
+                    'user_id' => auth()->id(),
                     'total_usd' => 0,
                     'bcv_rate' => $bcvRate,
                     'total_bs' => 0,
@@ -55,6 +59,10 @@ class SaleController extends Controller
                     $product = Product::lockForUpdate()->find($item['product_id']);
                     $quantityToSell = (int)$item['quantity'];
 
+                    if (!$product->status) {
+                        throw new \Exception("El producto '{$product->name}' está pausado y no puede venderse.");
+                    }
+
                     if ($product->stock < $quantityToSell) {
                         throw new \Exception("Stock insuficiente para: {$product->name}");
                     }
@@ -63,6 +71,7 @@ class SaleController extends Controller
                     while ($remainingToProcess > 0) {
                         $lot = Expense::where('product_id', $product->id)
                                       ->where('remaining_quantity', '>', 0)
+                                      ->lockForUpdate()
                                       ->oldest()
                                       ->first();
 
@@ -104,5 +113,36 @@ class SaleController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
+    }
+
+    public function cancel(Sale $sale, Request $request)
+    {
+        // Una venta ya cancelada no debe procesarse dos veces
+        if ($sale->cancelled_at !== null) {
+            return back()->withErrors(['error' => 'Esta venta ya fue cancelada anteriormente.']);
+        }
+
+        $request->validate([
+            'cancel_reason' => 'required|string|min:5|max:255',
+        ]);
+
+        DB::transaction(function () use ($sale, $request) {
+            foreach ($sale->items as $item) {
+                // Restaurar remaining_quantity en el lote
+                if ($item->expense_id) {
+                    Expense::where('id', $item->expense_id)
+                        ->increment('remaining_quantity', $item->quantity);
+                }
+                // Restaurar stock del producto
+                Product::where('id', $item->product_id)
+                    ->increment('stock', $item->quantity);
+            }
+            // Marcar venta como cancelada (no borrar, preservar historial)
+            $sale->update([
+                'cancelled_at'  => now(),
+                'cancel_reason' => $request->cancel_reason,
+            ]);
+        });
+        return back()->with('success', 'Venta cancelada y stock restaurado.');
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Expense;
 use App\Models\Product;
+use App\Http\Requests\StoreExpenseRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -36,6 +37,7 @@ class ExpenseController extends Controller
         $ventasMensuales = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->whereBetween('sales.created_at', [$from, $to])
+            ->whereNull('sales.cancelled_at')
             ->sum(DB::raw('sale_items.quantity * sale_items.price_at_sale'));
 
         $ventasMensuales = (float) ($ventasMensuales ?? 0);
@@ -74,6 +76,7 @@ class ExpenseController extends Controller
             ->addSelect([
                 'total_recaudado' => DB::table('sale_items')
                     ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                    ->whereNull('sales.cancelled_at')
                     ->where(function ($q) {
                         // Caso A — venta con lote asignado: coincidencia exacta
                         $q->whereColumn('sale_items.expense_id', 'expenses.id')
@@ -97,6 +100,8 @@ class ExpenseController extends Controller
             // Misma lógica: sin filtro de fecha, historial completo.
             ->addSelect([
                 'unidades_vendidas' => DB::table('sale_items')
+                    ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                    ->whereNull('sales.cancelled_at')
                     ->where(function ($q) {
                         $q->whereColumn('sale_items.expense_id', 'expenses.id')
                           ->orWhere(function ($q2) {
@@ -119,20 +124,15 @@ class ExpenseController extends Controller
             default => $query->latest('expenses.created_at'),
         };
 
-        $lotes = $query->get();
-
-        // ── Buscador en memoria (client-side alternativo por seguridad) ────────
         $search = $request->input('search', '');
         if ($search !== '') {
-            $needle = strtolower($search);
-            $lotes  = $lotes->filter(function ($lote) use ($needle) {
-                $haystack = strtolower(
-                    ($lote->product->name     ?? '') . ' ' .
-                    ($lote->product->category ?? '')
-                );
-                return str_contains($haystack, $needle);
+            $query->whereHas('product', function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('category', 'like', '%' . $search . '%');
             });
         }
+
+        $lotes = $query->get();
 
         // ═══════════════════════════════════════════════════════════════════════
         //  DATOS AUXILIARES PARA LA VISTA
@@ -169,14 +169,8 @@ class ExpenseController extends Controller
     //  store() — sin cambios respecto al original
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function store(Request $request)
+    public function store(StoreExpenseRequest $request)
     {
-        $request->validate([
-            'product_id'     => 'required|exists:products,id',
-            'quantity'       => 'required|integer|min:1',
-            'total_cost_usd' => 'required|numeric|min:0',
-        ]);
-
         $product = Product::findOrFail($request->product_id);
 
         try {
@@ -196,5 +190,93 @@ class ExpenseController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Error al registrar: ' . $e->getMessage()]);
         }
+    }
+
+    public function export(Request $request)
+    {
+        $month = $request->filled('month') ? (int) $request->month : now()->month;
+        $year  = $request->filled('year')  ? (int) $request->year  : now()->year;
+
+        $from = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $to   = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
+
+        $query = Expense::with('product')
+            ->whereBetween('expenses.created_at', [$from, $to])
+            ->select('expenses.*')
+            ->addSelect([
+                'total_recaudado' => DB::table('sale_items')
+                    ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                    ->whereNull('sales.cancelled_at')
+                    ->where(function ($q) {
+                        $q->whereColumn('sale_items.expense_id', 'expenses.id')
+                          ->orWhere(function ($q2) {
+                              $q2->whereNull('sale_items.expense_id')
+                                 ->whereColumn('sale_items.product_id', 'expenses.product_id')
+                                 ->whereRaw('expenses.id = (
+                                     SELECT MIN(e2.id)
+                                     FROM expenses e2
+                                     WHERE e2.product_id = expenses.product_id
+                                 )');
+                          });
+                    })
+                    ->selectRaw('COALESCE(SUM(sale_items.quantity * sale_items.price_at_sale), 0)'),
+            ])
+            ->addSelect([
+                'unidades_vendidas' => DB::table('sale_items')
+                    ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                    ->whereNull('sales.cancelled_at')
+                    ->where(function ($q) {
+                        $q->whereColumn('sale_items.expense_id', 'expenses.id')
+                          ->orWhere(function ($q2) {
+                              $q2->whereNull('sale_items.expense_id')
+                                 ->whereColumn('sale_items.product_id', 'expenses.product_id')
+                                 ->whereRaw('expenses.id = (
+                                     SELECT MIN(e2.id)
+                                     FROM expenses e2
+                                     WHERE e2.product_id = expenses.product_id
+                                 )');
+                          });
+                    })
+                    ->selectRaw('COALESCE(SUM(sale_items.quantity), 0)'),
+            ]);
+
+        $sort = $request->input('sort', '');
+        match ($sort) {
+            'best'  => $query->orderByRaw('(total_recaudado - cost_usd) DESC'),
+            'worst' => $query->orderByRaw('(total_recaudado - cost_usd) ASC'),
+            default => $query->latest('expenses.created_at'),
+        };
+
+        $search = $request->input('search', '');
+        if ($search !== '') {
+            $query->whereHas('product', function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('category', 'like', '%' . $search . '%');
+            });
+        }
+
+        $lotes = $query->get();
+
+        return response()->streamDownload(function () use ($lotes) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Producto', 'Categoría', 'Lote ID', 'Cantidad comprada', 'Costo USD', 'Costo unitario', 'Unidades vendidas', 'Recaudado USD', 'Ganancia USD', 'ROI %']);
+            foreach ($lotes as $lote) {
+                $ganancia = $lote->total_recaudado - $lote->cost_usd;
+                $roi = $lote->cost_usd > 0 ? round(($ganancia / $lote->cost_usd) * 100, 1) : 0;
+                fputcsv($handle, [
+                    $lote->product->name ?? '',
+                    $lote->product->category ?? '',
+                    $lote->id,
+                    $lote->quantity,
+                    $lote->cost_usd,
+                    round($lote->cost_usd / max($lote->quantity, 1), 2),
+                    $lote->unidades_vendidas,
+                    $lote->total_recaudado,
+                    round($ganancia, 2),
+                    $roi,
+                ]);
+            }
+            fclose($handle);
+        }, "balance-{$year}-{$month}.csv", ['Content-Type' => 'text/csv']);
     }
 }

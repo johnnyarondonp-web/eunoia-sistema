@@ -26,9 +26,18 @@
                 <div class="mb-8 flex justify-between items-center border-b pb-4">
                     <div>
                         <span class="text-[10px] uppercase tracking-widest font-bold text-gray-400 block">Tasa BCV</span>
-                        <span class="text-lg font-mono font-bold text-indigo-600" id="current-bcv-rate" data-rate="{{ $bcvRate }}">
-                            {{ number_format($bcvRate, 2) }} Bs.
-                        </span>
+                        <div class="flex items-center space-x-2">
+                            <input type="number" step="0.01" name="bcv_rate" id="current-bcv-rate" value="{{ $bcvRate }}" min="1" max="9999" class="w-32 text-lg font-mono font-bold text-indigo-600 border-gray-200 rounded focus:ring-0 focus:border-indigo-500 py-1 px-2 cursor-not-allowed bg-gray-50" form="sales-form" readonly>
+                            <span class="text-lg font-mono font-bold text-indigo-600">Bs.</span>
+                            <button type="button" class="ml-2 text-[9px] uppercase tracking-widest font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-full transition" onclick="
+                                const input = document.getElementById('current-bcv-rate');
+                                input.readOnly = false;
+                                input.classList.remove('opacity-60', 'cursor-not-allowed', 'bg-gray-50');
+                                this.style.display = 'none';
+                            ">
+                                ✏ Usar tasa personalizada
+                            </button>
+                        </div>
                     </div>
                     <button type="button" id="add-item" class="border border-black text-black px-4 py-2 text-[10px] uppercase tracking-widest font-bold hover:bg-black hover:text-white transition">
                         + Añadir Producto
@@ -131,7 +140,12 @@
 
     <script>
         let rowIdx = 0;
-        const bcvRate = parseFloat($('#current-bcv-rate').data('rate'));
+        let bcvRate = parseFloat($('#current-bcv-rate').val());
+        
+        $('#current-bcv-rate').on('input', function() {
+            bcvRate = parseFloat($(this).val()) || 1;
+            calculateTotals();
+        });
 
         function formatProduct(opt) {
             if (!opt.id) return opt.text;

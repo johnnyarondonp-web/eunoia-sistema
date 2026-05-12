@@ -151,7 +151,7 @@
         }
     </style>
 
-    <div class="py-12 bg-[#F9F9F9] min-h-screen">
+    <div class="py-12 bg-white min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {{-- Header --}}
@@ -161,12 +161,22 @@
                         <h2 class="font-cormorant text-4xl font-light tracking-wide text-eunoia-text" style="letter-spacing: 0.04em;">
                             Panel de Inventario
                         </h2>
-                        <div class="bg-white border border-gray-200 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-2">
-                            <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0"></span>
-                            <span class="text-xs font-black text-gray-600 uppercase tracking-widest whitespace-nowrap">
-                                BCV: {{ number_format($bcvRate, 2, ',', '.') }} Bs.
-                            </span>
-                        </div>
+                        @if($bcvApiOk)
+                            <div class="bg-white border border-gray-200 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-2">
+                                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0" title="API Activa"></span>
+                                <span class="text-xs font-black text-gray-600 uppercase tracking-widest whitespace-nowrap">BCV Oficial:</span>
+                                <span class="text-sm font-bold text-gray-800">{{ number_format($bcvRate, 2, '.', '') }} Bs.</span>
+                            </div>
+                        @else
+                            <form action="{{ route('bcv.setManual') }}" method="POST" class="bg-red-50 border border-red-200 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-2">
+                                @csrf
+                                <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse flex-shrink-0" title="API Caída"></span>
+                                <span class="text-[10px] font-black text-red-600 uppercase tracking-widest whitespace-nowrap">⚠ API BCV NO DISPONIBLE:</span>
+                                <input type="number" step="0.01" min="1" max="9999" name="bcv_rate" value="{{ number_format($bcvRate, 2, '.', '') }}" class="w-20 h-6 text-xs text-right border-gray-300 rounded focus:ring-red-500 focus:border-red-500 p-1 font-bold bg-white">
+                                <span class="text-xs font-black text-red-600 uppercase tracking-widest whitespace-nowrap">Bs.</span>
+                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-full text-[10px] font-bold transition">Guardar</button>
+                            </form>
+                        @endif
                     </div>
                     <p class="text-[10px] text-gray-400 uppercase tracking-[0.3em]">Gestión exclusiva • Eunoia Cosmetics</p>
                 </div>
@@ -282,13 +292,14 @@
                 <div class="flex items-center gap-3 mb-5">
                     <h3 class="font-cormorant text-2xl font-light text-eunoia-text tracking-wide">Lo Más Vendido</h3>
                     <div class="flex-1 h-px bg-gray-100"></div>
-                    <span class="text-[9px] font-black text-eunoia-coral uppercase tracking-widest">Top 5</span>
+                    <div class="flex gap-2">
+                        <a href="?top_period=week" class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-gray-200 shadow-sm {{ $topPeriod === 'week' ? 'active' : 'bg-white' }}">Semana</a>
+                        <a href="?top_period=month" class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-gray-200 shadow-sm {{ $topPeriod === 'month' ? 'active' : 'bg-white' }}">Mes</a>
+                        <a href="?top_period=year" class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-gray-200 shadow-sm {{ $topPeriod === 'year' ? 'active' : 'bg-white' }}">Año</a>
+                    </div>
                 </div>
 
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-10" id="topGrid">
-                    @php
-                        $topProducts = $products->sortByDesc(fn($p) => $p->totalSold ?? 0)->take(5);
-                    @endphp
                     @forelse($topProducts as $product)
                         <div class="product-card bg-white rounded-[2rem] overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-500 border border-gray-50 group relative"
                              data-name="{{ strtolower($product->name) }}"
@@ -333,7 +344,7 @@
                                 <p class="text-[9px] font-bold text-gray-400">≈ {{ number_format($product->price * $bcvRate, 2, ',', '.') }} Bs.</p>
                                 <div class="mt-2 pt-2 border-t border-gray-50">
                                     <span class="text-[9px] font-bold text-eunoia-coral uppercase tracking-widest">
-                                        {{ $product->totalSold ?? 0 }} vendidos
+                                        {{ $product->totalSoldTop ?? 0 }} vendidos
                                     </span>
                                 </div>
                             </div>

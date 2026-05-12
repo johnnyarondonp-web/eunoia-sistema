@@ -27,18 +27,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/productos', [ProductController::class, 'store'])->name('products.store');
     Route::get('/productos/{product}/editar', [ProductController::class, 'edit'])->name('products.edit');
     Route::patch('/productos/{product}', [ProductController::class, 'update'])->name('products.update');
-    Route::delete('/productos/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    // Route::delete('/productos/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
 
     // Ventas
     Route::prefix('ventas')->group(function () {
         Route::get('/nueva', [SaleController::class, 'create'])->name('sales.create');
         Route::post('/', [SaleController::class, 'store'])->name('sales.store');
         Route::get('/historial', [SaleController::class, 'index'])->name('sales.index');
+        Route::patch('/{sale}/cancelar', [SaleController::class, 'cancel'])->name('sales.cancel');
     });
+
+    Route::post('/configuracion/tasa', [SaleController::class, 'setManualRate'])->name('bcv.setManual');
 
     // Balance
     Route::prefix('balance')->group(function () {
         Route::get('/', [ExpenseController::class, 'balance'])->name('expenses.balance');
+        Route::get('/exportar', [ExpenseController::class, 'export'])->name('expenses.export');
         Route::post('/guardar', [ExpenseController::class, 'store'])->name('expenses.store');
     });
     Route::patch('/products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])
