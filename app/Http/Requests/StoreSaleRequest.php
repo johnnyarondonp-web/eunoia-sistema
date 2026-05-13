@@ -24,4 +24,14 @@ class StoreSaleRequest extends FormRequest
             'bcv_rate' => ['nullable', 'numeric', 'min:1', 'max:9999']
         ];
     }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            $ids = collect($this->input('items', []))->pluck('product_id')->filter();
+            if ($ids->count() !== $ids->unique()->count()) {
+                $validator->errors()->add('items', 'No se puede registrar el mismo producto dos veces en una venta.');
+            }
+        });
+    }
 }

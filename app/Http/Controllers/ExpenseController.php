@@ -55,7 +55,7 @@ class ExpenseController extends Controller
         $sort   = $request->input('sort', '');
         $search = $request->input('search', '');
 
-        $lotes = $this->buildLotesQuery($month, $year, $sort, $search)->get();
+        $lotes = $this->buildLotesQuery($month, $year, $sort, $search)->paginate(25);
 
         // ═══════════════════════════════════════════════════════════════════════
         //  DATOS AUXILIARES PARA LA VISTA

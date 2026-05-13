@@ -240,6 +240,10 @@
                             <p class="text-sm text-gray-400">Ningún lote coincide con tu búsqueda.</p>
                         </div>
                     </div>
+                    
+                    <div class="px-6 py-4 border-t border-gray-50">
+                        {{ $lotes->links() }}
+                    </div>
                 @endif
             </div>
 

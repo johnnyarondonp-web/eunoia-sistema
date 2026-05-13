@@ -115,6 +115,8 @@ class SaleController extends Controller
             'cancel_reason' => 'required|string|min:5|max:255',
         ]);
 
+        $sale->load('items');
+
         DB::transaction(function () use ($sale, $request) {
             foreach ($sale->items as $item) {
                 // Restaurar remaining_quantity en el lote
@@ -123,7 +125,7 @@ class SaleController extends Controller
                         ->increment('remaining_quantity', $item->quantity);
                 }
                 // Restaurar stock del producto
-                Product::where('id', $item->product_id)
+                Product::withTrashed()->where('id', $item->product_id)
                     ->increment('stock', $item->quantity);
             }
             // Marcar venta como cancelada (no borrar, preservar historial)

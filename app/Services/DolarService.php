@@ -9,25 +9,20 @@ use Illuminate\Support\Facades\Log;
 
 class DolarService
 {
-    public const DEFAULT_RATE = 48.00;
+    public const DEFAULT_RATE = 500.00;
 
     public function getRate(): float
     {
-        // Prioridad: caché rápida → DB (tasa manual persistida) → API BCV → hardcode
-        if (Cache::has('manual_bcv_rate')) {
-            return (float) Cache::get('manual_bcv_rate');
+        // La API es siempre la fuente de verdad. La tasa manual en DB
+        // es el respaldo si la API no responde, no al revés.
+        $bcv = $this->getBcvRate();
+        if ($bcv !== null) {
+            return $bcv;
         }
 
         $dbRate = ExchangeRate::where('source', 'manual')->latest()->value('rate');
         if ($dbRate !== null) {
-            // Reconstruir caché para las próximas requests del mismo deploy
-            Cache::put('manual_bcv_rate', $dbRate, now()->addDays(7));
             return (float) $dbRate;
-        }
-
-        $bcv = $this->getBcvRate();
-        if ($bcv !== null) {
-            return $bcv;
         }
 
         return self::DEFAULT_RATE;
@@ -35,12 +30,13 @@ class DolarService
 
     public function setManualRate(float $rate): void
     {
-        // Un solo registro 'manual' en la tabla — actualizar, no acumular filas
+        // Solo persiste el valor en DB como respaldo si la API falla.
+        // No cachear — el caché de 7 días impedía que la API recuperara
+        // su prioridad después de un ajuste manual.
         ExchangeRate::updateOrCreate(
             ['source' => 'manual'],
             ['rate'   => $rate]
         );
-        Cache::put('manual_bcv_rate', $rate, now()->addDays(7));
     }
 
     public function getBcvRate(): ?float

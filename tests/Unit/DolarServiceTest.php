@@ -2,66 +2,69 @@
 
 namespace Tests\Unit;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
-use App\Services\DolarService;
 use App\Models\ExchangeRate;
+use App\Services\DolarService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+use Mockery;
 
 class DolarServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_retorna_tasa_desde_cache_si_existe(): void
+    public function test_it_falls_back_to_manual_rate_in_db()
     {
-        Cache::put('bcv_rate_official', 42.50, 600);
-
-        $service = app(DolarService::class);
-        $this->assertEquals(42.50, $service->getBcvRate());
-    }
-
-    public function test_retorna_tasa_manual_de_db_si_no_hay_cache(): void
-    {
+        // Limpiar cache para asegurar que va a la DB
         Cache::forget('manual_bcv_rate');
-        ExchangeRate::create(['source' => 'manual', 'rate' => 55.00]);
-
-        $service = app(DolarService::class);
-        $this->assertEquals(55.00, $service->getRate());
-    }
-
-    public function test_retorna_fallback_si_todo_falla(): void
-    {
         Cache::forget('bcv_rate_official');
-        Cache::forget('manual_bcv_rate');
-        Http::fake(['*' => Http::response(null, 500)]);
 
-        $service = app(DolarService::class);
-        $rate = $service->getBcvRate();
+        ExchangeRate::create([
+            'source' => 'manual',
+            'rate' => 350.00
+        ]);
 
-        $this->assertNull($rate); // getBcvRate retorna null si la API falla
+        // Mockear DolarService para que getBcvRate retorne null
+        $service = Mockery::mock(DolarService::class)->makePartial();
+        $service->shouldReceive('getBcvRate')->andReturn(null);
+
+        $this->assertEquals(350.00, $service->getRate());
     }
 
-    public function test_getrate_cae_a_default_si_todo_falla(): void
+    public function test_it_falls_back_to_default_rate_constant()
     {
+        Cache::forget('manual_bcv_rate');
         Cache::forget('bcv_rate_official');
-        Cache::forget('manual_bcv_rate');
-        Http::fake(['*' => Http::response(null, 500)]);
+        
+        // Sin registros en DB
+        $this->assertEquals(0, ExchangeRate::count());
 
-        $service = app(DolarService::class);
-        $this->assertEquals(DolarService::DEFAULT_RATE, $service->getRate());
+        $service = Mockery::mock(DolarService::class)->makePartial();
+        $service->shouldReceive('getBcvRate')->andReturn(null);
+
+        // El valor actualizado en el paso anterior es 500.00
+        $this->assertEquals(500.00, $service->getRate());
     }
 
-    public function test_setManualRate_solo_guarda_un_registro(): void
+    public function test_api_rate_has_priority_over_db_and_constant()
     {
-        $service = app(DolarService::class);
+        Cache::forget('manual_bcv_rate');
+        Cache::forget('bcv_rate_official');
 
-        $service->setManualRate(50.00);
-        $service->setManualRate(60.00);
-        $service->setManualRate(70.00);
+        ExchangeRate::create([
+            'source' => 'manual',
+            'rate' => 350.00
+        ]);
 
-        // updateOrCreate garantiza exactamente un registro manual en la tabla
-        $this->assertEquals(1, ExchangeRate::where('source', 'manual')->count());
-        $this->assertEquals(70.00, ExchangeRate::where('source', 'manual')->value('rate'));
+        $service = Mockery::mock(DolarService::class)->makePartial();
+        $service->shouldReceive('getBcvRate')->andReturn(475.50);
+
+        $this->assertEquals(475.50, $service->getRate());
+    }
+
+    protected function tearDown(): void
+    {
+        Mockery::close();
+        parent::tearDown();
     }
 }

@@ -23,12 +23,15 @@ class ProductController extends Controller
         $weekStart = $now->copy()->startOfWeek();   // lunes
         $weekEnd   = $now->copy()->endOfWeek();     // domingo
 
-        $products = Product::withSum('saleItems as totalSold', 'quantity')
+        $products = Product::withSum(['saleItems as totalSold' => function ($q) {
+            $q->whereHas('sale', fn($s) => $s->whereNull('cancelled_at'));
+        }], 'quantity')
 
             // Unidades vendidas esta semana
             ->withSum(['saleItems as weeklySold' => function ($q) use ($weekStart, $weekEnd) {
                 $q->whereHas('sale', fn($s) =>
                     $s->whereBetween('created_at', [$weekStart, $weekEnd])
+                      ->whereNull('cancelled_at')
                 );
             }], 'quantity')
 
@@ -39,6 +42,7 @@ class ProductController extends Controller
         // Resultado: $product->monthlySales = ['2026-04' => 12, '2026-03' => 7, ...]
         $monthlySalesRaw = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->whereNull('sales.cancelled_at')
             ->select(
                 'sale_items.product_id',
                 DB::raw("DATE_FORMAT(sales.created_at, '%Y-%m') as ym"),
@@ -56,69 +60,14 @@ class ProductController extends Controller
             $product->weeklySold = (int) ($product->weeklySold ?? 0);
         });
 
-        $bcvApiOk   = $dolarService->getBcvRate() !== null;
-        $bcvRate    = $dolarService->getRate();
+        $bcvApiRate = $dolarService->getBcvRate();
+        $bcvApiOk   = $bcvApiRate !== null;
+        $bcvRate    = $bcvApiRate ?? $dolarService->getRate();
         $categories = config('categories');
 
-        $getTopProducts = function ($period) {
-            $cacheKey = "top_products_{$period}";
-            $data = Cache::get($cacheKey);
-
-            // empty() funciona sobre arrays, null, o cualquier valor falsy
-            // sin riesgo de deserializar objetos Eloquent rotos
-            if (empty($data)) {
-                Cache::forget($cacheKey);
-
-                $topQuery = SaleItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
-                    ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-                    ->whereNull('sales.cancelled_at');
-
-                if ($period === 'week') {
-                    $topQuery->where('sales.created_at', '>=', now()->startOfWeek());
-                } elseif ($period === 'month') {
-                    $topQuery->where('sales.created_at', '>=', now()->startOfMonth());
-                } elseif ($period === 'year') {
-                    $topQuery->where('sales.created_at', '>=', now()->startOfYear());
-                }
-
-                $results = $topQuery
-                    ->groupBy('product_id')
-                    ->orderByDesc('total_sold')
-                    ->limit(5)
-                    ->with('product')
-                    ->get()
-                    ->map(function ($item) {
-                        if (!$item->product) return null;
-                        return [
-                            'id'           => $item->product->id,
-                            'name'         => $item->product->name,
-                            'category'     => $item->product->category,
-                            'price'        => $item->product->price,
-                            'stock'        => $item->product->stock,
-                            'image_path'   => $item->product->image_path,
-                            'status'       => $item->product->status,
-                            'totalSold'    => (int) ($item->product->totalSold ?? 0),
-                            'totalSoldTop' => (int) $item->total_sold,
-                        ];
-                    })
-                    ->filter()
-                    ->values()
-                    ->toArray();
-
-                // Solo guardar en cache si hay resultados reales
-                if (!empty($results)) {
-                    Cache::put($cacheKey, $results, 3600);
-                }
-
-                $data = $results;
-            }
-
-            return $data ?? [];
-        };
-
-        $topWeek = $getTopProducts('week');
-        $topMonth = $getTopProducts('month');
-        $topYear = $getTopProducts('year');
+        $topWeek = $this->getTopProducts('week');
+        $topMonth = $this->getTopProducts('month');
+        $topYear = $this->getTopProducts('year');
 
         return view('dashboard', compact('products', 'categories', 'bcvRate', 'bcvApiOk', 'topWeek', 'topMonth', 'topYear'));
     }
@@ -236,6 +185,63 @@ class ProductController extends Controller
 
         return redirect()->route('dashboard')
             ->with('success', 'Producto archivado correctamente.');
+    }
+
+    private function getTopProducts(string $period): array
+    {
+        $cacheKey = "top_products_{$period}";
+        $data = Cache::get($cacheKey);
+
+        // empty() funciona sobre arrays, null, o cualquier valor falsy
+        // sin riesgo de deserializar objetos Eloquent rotos
+        if (empty($data)) {
+            Cache::forget($cacheKey);
+
+            $topQuery = SaleItem::select('product_id', DB::raw('SUM(quantity) as total_sold'))
+                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+                ->whereNull('sales.cancelled_at');
+
+            if ($period === 'week') {
+                $topQuery->where('sales.created_at', '>=', now()->startOfWeek());
+            } elseif ($period === 'month') {
+                $topQuery->where('sales.created_at', '>=', now()->startOfMonth());
+            } elseif ($period === 'year') {
+                $topQuery->where('sales.created_at', '>=', now()->startOfYear());
+            }
+
+            $results = $topQuery
+                ->groupBy('product_id')
+                ->orderByDesc('total_sold')
+                ->limit(5)
+                ->with('product')
+                ->get()
+                ->map(function ($item) {
+                    if (!$item->product) return null;
+                    return [
+                        'id'           => $item->product->id,
+                        'name'         => $item->product->name,
+                        'category'     => $item->product->category,
+                        'price'        => $item->product->price,
+                        'stock'        => $item->product->stock,
+                        'image_path'   => $item->product->image_path,
+                        'status'       => $item->product->status,
+                        'totalSold'    => (int) ($item->product->totalSold ?? 0),
+                        'totalSoldTop' => (int) $item->total_sold,
+                    ];
+                })
+                ->filter()
+                ->values()
+                ->toArray();
+
+            // Solo guardar en cache si hay resultados reales
+            if (!empty($results)) {
+                Cache::put($cacheKey, $results, 3600);
+            }
+
+            $data = $results;
+        }
+
+        return $data ?? [];
     }
 
 }
