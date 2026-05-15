@@ -1,117 +1,88 @@
-# Eunoia — Sistema de Inventario y Ventas
+# Eunoia Sistema 🌌
 
-> Sistema web para la gestión de inventario, registro de ventas y análisis de rentabilidad por lotes, diseñado para pequeños negocios de productos cosméticos y de moda.
-
----
-
-## ¿Qué es?
-
-Eunoia es una aplicación web privada que permite a una emprendedora llevar el control completo de su negocio: desde registrar cada lote de mercancía comprado, hasta ver en tiempo real cuánto ha ganado con ese lote específico a lo largo del tiempo.
-
-El sistema separa de forma inteligente el **flujo de caja mensual** (cuánto invertí y vendí este mes) del **rendimiento histórico de cada lote** (cuánto ha generado ese lote desde que se compró, sin importar en qué mes se vendió). Esto evita el error común de "congelar" el progreso de un lote al filtrar por mes.
+**Eunoia** es un sistema avanzado de gestión de inventario y punto de venta (POS) diseñado para optimizar el control de existencias, el cálculo de ganancias reales y el manejo multi-moneda en entornos dinámicos.
 
 ---
 
-## Stack tecnológico
+## 🛠️ Stack Tecnológico
 
-| Tecnología | Uso |
-|---|---|
-| **Laravel 11** | Framework backend (PHP) |
-| **PHP 8.2+** | Lenguaje base |
-| **MySQL** | Base de datos relacional |
-| **Eloquent ORM** | Queries, relaciones y subqueries |
-| **Blade** | Motor de plantillas para las vistas |
-| **Tailwind CSS** | Estilos y diseño responsive |
-| **Vite** | Compilación de assets frontend |
-| **Laravel Breeze** | Autenticación (login, registro, perfil) |
-| **DolarAPI (ve.dolarapi.com)** | Tasa BCV en tiempo real con caché de 10 min |
+El sistema está construido sobre las versiones más recientes y estables para garantizar rendimiento y seguridad:
 
----
+### **Backend**
+- **PHP:** `8.3.1` (Zend Engine v4.3.1)
+- **Framework:** `Laravel 13.5.0`
+- **Base de Datos:** MySQL / SQLite (Soporta transacciones ACID para integridad de datos)
+- **Servicios Externos:** Integración con [DolarAPI](https://ve.dolarapi.com) para tasas en tiempo real.
 
-## Funcionalidades principales
-
-### 📦 Gestión de productos
-- Registrar productos con nombre, categoría, precio, stock e imagen
-- Al crear un producto, se genera automáticamente su primer **lote de inversión**
-- Editar precio, datos e imagen de cualquier producto
-- Agregar stock adicional desde la edición (genera un nuevo lote)
-- Activar / pausar productos (los pausados no aparecen disponibles para venta)
-- Eliminar productos con limpieza de imagen en storage
-
-### 🛒 Registro de ventas
-- Formulario para registrar ventas con múltiples productos en una sola transacción
-- Lógica **FIFO** (First In, First Out): descuenta stock del lote más antiguo primero
-- Conversión automática a bolívares usando la tasa BCV del momento de la venta
-- Historial de ventas filtrable por rango de fechas
-
-### 📊 Balance y rentabilidad
-- **Tarjetas de flujo de caja mensual**: Inversión del mes, Ventas del mes, Ganancia Neta, ROI
-- **Tabla de lotes**: muestra todos los lotes comprados en el período seleccionado con su historial de ventas completo (sin límite de mes), porcentaje de recuperación y ganancia generada
-- Filtros por mes y año, buscador por nombre/categoría, ordenamiento por mejor/peor desempeño
-
-### 💱 Conversión de divisas
-- Integración con la API pública de DolarAPI para obtener la tasa BCV oficial
-- Resultado cacheado 10 minutos para evitar requests innecesarios
+### **Frontend**
+- **Vite:** `8.0.0` (Bundler de última generación)
+- **Tailwind CSS:** `3.1.0` (con plugin de Vite `^4.0.0`)
+- **Alpine.js:** `3.4.2` (Reactividad ligera para la UI)
+- **Axios:** `1.15.0` (Comunicación asíncrona)
 
 ---
 
-## Estructura de la base de datos
+## 🧠 Lógica y Funcionamiento del Sistema
 
-```
-products
-  id · name · category · price · stock · image_path · status
+Eunoia no es solo un registro de ventas; es una herramienta de inteligencia de negocios que aplica reglas contables precisas.
 
-expenses  ← "lotes de compra"
-  id · product_id (FK) · quantity · remaining_quantity
-  cost_usd · bcv_rate · total_bs · description
+### 1. Gestión de Inventario mediante Lotes (FIFO)
+El sistema utiliza la metodología **FIFO (First-In, First-Out)** para la salida de mercancía.
+- **¿Cómo funciona?** Cada vez que registras una compra de mercancía (Gasto/Expense), el sistema crea un "lote" con un costo específico.
+- **Lógica de Venta:** Cuando se realiza una venta, el `LotDeductionService` busca el lote más antiguo con existencia y descuenta de allí. Si la venta supera la existencia de un lote, salta al siguiente.
+- **Cálculo de Ganancia:** La ganancia (`profit`) se calcula de forma individual para cada `SaleItem` comparando el precio de venta actual contra el costo unitario del lote específico del que salió el producto. Esto permite saber exactamente cuánto se ganó, incluso si compraste el mismo producto a diferentes precios en el tiempo.
 
-sales
-  id · total_usd · bcv_rate · total_bs
+### 2. Manejo Multi-Moneda Dinámico
+Diseñado para economías con fluctuación cambiaria (como Venezuela).
+- **Tasa BCV Automática:** El `DolarService` consulta la API de BCV cada 30 minutos y cachea el resultado para máxima velocidad.
+- **Respaldo Manual:** Si la API falla, el sistema utiliza una tasa manual configurada por el administrador en la base de datos.
+- **Precios en USD, Pagos en BS:** El sistema permite fijar precios en dólares pero calcula automáticamente el total en Bolívares al momento de la venta usando la tasa más reciente.
 
-sale_items
-  id · sale_id (FK) · product_id (FK) · expense_id (FK)
-  quantity · price_at_sale · profit
-```
-
-La relación clave es `sale_items.expense_id → expenses.id`, que permite atribuir cada unidad vendida al lote exacto del que provino, habilitando el cálculo de rentabilidad por lote.
+### 3. Integridad de Transacciones
+Todas las operaciones críticas (Ventas y Cancelaciones) están envueltas en **DB Transactions**.
+- **Ventas:** Se descuenta stock, se asignan lotes y se crean los registros de venta en una sola operación atómica. Si algo falla, el stock no se toca.
+- **Cancelaciones:** Al cancelar una venta, el sistema es capaz de rastrear exactamente de qué lotes salió la mercancía y **restaurar** la cantidad restante en esos lotes específicos, devolviendo el stock al estado exacto anterior a la venta.
 
 ---
 
-## Instalación local
+## 🚀 Módulos Principales
 
-### Requisitos previos
-- PHP 8.2+
-- Composer
-- Node.js + npm
-- `mysqldump` disponible en el PATH del servidor (para backups)
+| Módulo | Descripción |
+| :--- | :--- |
+| **Dashboard** | Vista general con productos activos y estados de stock. |
+| **Productos** | Gestión de catálogo, control de stock mínimo y estados (pausado/activo). |
+| **Ventas** | Interfaz de facturación rápida con búsqueda de productos y cálculo de tasa. |
+| **Balance** | Análisis de ingresos vs gastos, exportación de datos y gestión de costos. |
+| **Configuración** | Control manual de tasas de cambio y perfiles de usuario. |
 
-## Instalación
+---
 
-```bash
-composer install
-npm install && npm run build
-cp .env.example .env
-php artisan key:generate
-php artisan migrate
-php artisan storage:link
-```
+## ⚙️ Instalación y Configuración
 
-## Backup automático
+1. **Clonar el repositorio:**
+   ```bash
+   git clone <url-repo>
+   ```
 
-El comando `db:backup` exporta la base de datos a `storage/app/backups/` y conserva solo los últimos 30 archivos.
+2. **Ejecutar script de configuración automática:**
+   (Este comando instala dependencias de PHP y JS, genera llaves, corre migraciones y compila assets)
+   ```bash
+   composer run setup
+   ```
 
-Para activarlo en producción, agregar al crontab del servidor:
+3. **Iniciar entorno de desarrollo:**
+   ```bash
+   composer run dev
+   ```
 
-```
-* * * * * cd /ruta-al-proyecto && php artisan schedule:run >> /dev/null 2>&1
-```
+---
 
-El backup corre diariamente a las 3:00 AM.
+## 📁 Estructura de Lógica Clave
 
-## Categorías de productos
+- `app/Services/LotDeductionService.php`: El "corazón" del sistema. Maneja la lógica FIFO y la trazabilidad de costos.
+- `app/Services/DolarService.php`: Gestiona la obtención y el respaldo de la tasa cambiaria.
+- `app/Http/Controllers/SaleController.php`: Orquestador de las transacciones de venta y cancelaciones.
+- `app/Models/Expense.php`: Representa los lotes de entrada de mercancía.
 
-Definidas en `config/categories.php`. Cualquier cambio en ese archivo se refleja automáticamente en la validación y en la UI, sin necesidad de tocar controladores ni Form Requests.
-
-## Tasa BCV
-
-El sistema intenta obtener la tasa automáticamente desde `ve.dolarapi.com`. Si la API no responde, usa la última tasa manual guardada en la tabla `exchange_rates`. Si tampoco existe, cae al valor por defecto definido en `DolarService::DEFAULT_RATE`.
+---
+*Análisis y documentación generada para el sistema Eunoia.*
