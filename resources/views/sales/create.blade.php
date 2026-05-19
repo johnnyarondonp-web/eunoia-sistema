@@ -11,6 +11,8 @@
         .select2-container--default .select2-results__option[aria-disabled=true] { display: none; } 
         /* Transición suave para la alerta */
         #ui-error-alert { transition: all 0.3s ease; }
+        /* Responsividad absoluta para Select2 */
+        .select2-container { width: 100% !important; }
     </style>
 
     <x-slot name="header">
@@ -246,6 +248,7 @@
                 templateResult: formatProduct,
                 templateSelection: formatProduct,
                 placeholder: "Seleccionar...",
+                width: '100%'
             });
 
             newSelect.on('change', function() {
