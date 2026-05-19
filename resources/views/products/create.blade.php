@@ -4,14 +4,14 @@
 
             <div class="bg-white shadow-xl rounded-3xl overflow-hidden border border-gray-100">
 
-                <div class="bg-eunoia-crema/40 p-8 border-b border-gray-100 text-center">
+                <div class="bg-eunoia-crema/40 p-6 sm:p-8 border-b border-gray-100 text-center">
                     <h2 class="text-3xl font-bold text-eunoia-text tracking-tighter">
                         Nuevo Producto
                     </h2>
                     <p class="text-[9px] text-gray-400 uppercase tracking-[0.3em] mt-2">Registro de Inventario &bull; Eunoia</p>
                 </div>
 
-                <div class="p-10">
+                <div class="p-4 sm:p-10">
                     <form action="{{ route('products.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8" id="product-form">
                         @csrf
 

@@ -5,7 +5,7 @@
             <div class="bg-white shadow-xl rounded-3xl overflow-hidden border border-gray-100">
 
                 {{-- Header con indicador de status --}}
-                <div class="bg-eunoia-crema/40 p-8 border-b border-gray-100 text-center relative">
+                <div class="bg-eunoia-crema/40 p-6 sm:p-8 border-b border-gray-100 text-center relative">
                     <h2 class="text-3xl font-bold text-eunoia-text tracking-tighter">
                         Editar Producto
                     </h2>
@@ -22,7 +22,7 @@
                     @endif
                 </div>
 
-                <div class="p-10">
+                <div class="p-4 sm:p-10">
 
                     @if($errors->any())
                         <div class="mb-6 bg-red-50 border border-red-100 rounded-xl px-5 py-4">

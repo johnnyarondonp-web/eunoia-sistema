@@ -20,16 +20,16 @@
     </x-slot>
 
     <div id="main-content" class="py-12 transition-all duration-300">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-8 border border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 sm:p-8 border border-gray-100">
                 
-                <div class="mb-8 flex justify-between items-center border-b pb-4">
+                <div class="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
                     <div>
                         <span class="text-[10px] uppercase tracking-widest font-bold text-gray-400 block">Tasa BCV</span>
-                        <div class="flex items-center space-x-2">
-                            <input type="number" step="0.01" name="bcv_rate" id="current-bcv-rate" value="{{ $bcvRate }}" min="1" max="9999" class="w-32 text-lg font-mono font-bold text-indigo-600 border-gray-200 rounded focus:ring-0 focus:border-indigo-500 py-1 px-2 cursor-not-allowed bg-gray-50" form="sales-form" readonly>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <input type="number" step="0.01" name="bcv_rate" id="current-bcv-rate" value="{{ $bcvRate }}" min="1" max="9999" class="w-24 sm:w-32 text-lg font-mono font-bold text-indigo-600 border-gray-200 rounded focus:ring-0 focus:border-indigo-500 py-1 px-2 cursor-not-allowed bg-gray-50" form="sales-form" readonly>
                             <span class="text-lg font-mono font-bold text-indigo-600">Bs.</span>
-                            <button type="button" class="ml-2 text-[9px] uppercase tracking-widest font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-full transition" onclick="
+                            <button type="button" class="text-[9px] uppercase tracking-widest font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-full transition" onclick="
                                 const input = document.getElementById('current-bcv-rate');
                                 input.readOnly = false;
                                 input.classList.remove('opacity-60', 'cursor-not-allowed', 'bg-gray-50');
@@ -39,7 +39,7 @@
                             </button>
                         </div>
                     </div>
-                    <button type="button" id="add-item" class="border border-black text-black px-4 py-2 text-[10px] uppercase tracking-widest font-bold hover:bg-black hover:text-white transition">
+                    <button type="button" id="add-item" class="w-full sm:w-auto border border-black text-black px-4 py-2 text-[10px] uppercase tracking-widest font-bold hover:bg-black hover:text-white transition">
                         + Añadir Producto
                     </button>
                 </div>
@@ -49,7 +49,7 @@
         <div class="flex">
             <div class="flex-shrink-0">
                 <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
                 </svg>
             </div>
             <div class="ml-3">
@@ -66,16 +66,18 @@
                 <form action="{{ route('sales.store') }}" method="POST" id="sales-form">
                     @csrf
                     
-                    <table class="w-full mb-8" id="items-table">
-                        <thead>
-                            <tr class="text-left border-b border-gray-100">
-                                <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400">Producto</th>
-                                <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400 w-32">Cantidad</th>
-                                <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400 w-32 text-right">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="items-body"></tbody>
-                    </table>
+                    <div class="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                        <table class="w-full mb-8 min-w-[320px]" id="items-table">
+                            <thead>
+                                <tr class="text-left border-b border-gray-100">
+                                    <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400">Producto</th>
+                                    <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400 w-24 sm:w-32">Cantidad</th>
+                                    <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400 w-20 sm:w-32 text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="items-body"></tbody>
+                        </table>
+                    </div>
 
                     <div class="mt-8 pt-6 border-t border-gray-100 flex flex-col items-end space-y-2">
                         <div class="flex space-x-4 items-center">
@@ -88,13 +90,13 @@
                         </div>
                     </div>
 
-                    <div class="mt-8 pt-6 flex flex-col items-end">
-                        <div id="ui-error-alert" class="hidden mb-4 bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-lg flex items-center shadow-sm">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div class="mt-8 pt-6 flex flex-col items-end w-full">
+                        <div id="ui-error-alert" class="hidden mb-4 bg-red-50 border border-red-100 text-red-600 px-4 py-2 rounded-lg flex items-center shadow-sm w-full sm:w-auto">
+                            <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             <span id="error-alert-text" class="text-[10px] uppercase font-bold tracking-widest"></span>
                         </div>
 
-                        <button type="button" onclick="showSaleModal()" class="bg-[#e98585] text-white px-12 py-4 rounded-full text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-[#d47474] transition shadow-lg">
+                        <button type="button" onclick="showSaleModal()" class="w-full sm:w-auto bg-[#e98585] text-white px-12 py-4 rounded-full text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-[#d47474] transition shadow-lg text-center">
                             Finalizar Venta
                         </button>
                     </div>
@@ -217,12 +219,12 @@
                             @endforeach
                         </select>
                     </td>
-                    <td class="py-4 px-4 relative">
+                    <td class="py-4 px-2 sm:px-4 relative w-24 sm:w-32">
                         <input type="number" name="items[${rowIdx}][quantity]" min="1" value="1" 
                                class="qty-input w-full border-gray-200 text-sm focus:ring-0 focus:border-black">
-                        <span class="qty-min-error hidden text-[8px] text-red-500 font-bold uppercase absolute bottom-0 left-4">Mínimo 1</span>
+                        <span class="qty-min-error hidden text-[8px] text-red-500 font-bold uppercase absolute bottom-0 left-2 sm:left-4">Mínimo 1</span>
                     </td>
-                    <td class="py-4 text-right">
+                    <td class="py-4 text-right w-20 sm:w-32">
                         <button type="button" onclick="removeRow(${rowIdx})" class="text-red-400 hover:text-red-600 text-[10px] uppercase font-bold tracking-widest">Eliminar</button>
                     </td>
                 </tr>

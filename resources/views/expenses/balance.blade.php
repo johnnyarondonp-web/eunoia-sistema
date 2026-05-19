@@ -6,46 +6,46 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
             {{-- ── CARDS DE RESUMEN ─────────────────────────────────────────── --}}
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
 
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                     <span class="text-[10px] uppercase tracking-widest font-bold text-gray-400 block mb-1">Inversi&oacute;n del Mes</span>
-                    <span class="text-2xl font-bold text-gray-800">${{ number_format($gastoMensual, 2) }}</span>
+                    <span class="text-xl sm:text-2xl font-bold text-gray-800">${{ number_format($gastoMensual, 2) }}</span>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                     <span class="text-[10px] uppercase tracking-widest font-bold text-gray-400 block mb-1">Ventas Mensuales</span>
-                    <span class="text-2xl font-bold text-gray-800">${{ number_format($ventasMensuales, 2) }}</span>
+                    <span class="text-xl sm:text-2xl font-bold text-gray-800">${{ number_format($ventasMensuales, 2) }}</span>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                     <span class="text-[10px] uppercase tracking-widest font-bold text-gray-400 block mb-1">Ganancia Neta</span>
-                    <span class="text-2xl font-bold {{ $gananciaMensual >= 0 ? 'text-emerald-600' : 'text-red-500' }}">
+                    <span class="text-xl sm:text-2xl font-bold {{ $gananciaMensual >= 0 ? 'text-emerald-600' : 'text-red-500' }}">
                         {{ $gananciaMensual >= 0 ? '+' : '' }}${{ number_format($gananciaMensual, 2) }}
                     </span>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                     <span class="text-[10px] uppercase tracking-widest font-bold text-gray-400 block mb-1">Retorno (ROI)</span>
-                    <span class="text-2xl font-bold {{ $roi >= 0 ? 'text-indigo-600' : 'text-red-500' }}">
+                    <span class="text-xl sm:text-2xl font-bold {{ $roi >= 0 ? 'text-indigo-600' : 'text-red-500' }}">
                         {{ $roi >= 0 ? '+' : '' }}{{ $roi }}%
                     </span>
                 </div>
             </div>
 
             {{-- ── FILTROS ──────────────────────────────────────────────────── --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
                 <form id="balance-form" method="GET" action="{{ route('expenses.balance') }}"
-                      class="flex flex-wrap items-end gap-4">
+                      class="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-4">
 
                     {{-- Mes: recarga página (datos vienen del servidor) --}}
-                    <div class="flex flex-col gap-1">
+                    <div class="flex flex-col gap-1 w-full sm:w-auto">
                         <label class="text-[10px] uppercase tracking-widest font-bold text-gray-400">Mes</label>
                         <select id="filter-month" name="month"
-                                class="border border-gray-200 rounded-xl text-sm px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-gray-50 w-32">
+                                class="border border-gray-200 rounded-xl text-sm px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-gray-50 w-full sm:w-32">
                             @foreach($meses as $num => $nombre)
                                 <option value="{{ $num }}" {{ $month == $num ? 'selected' : '' }}>{{ $nombre }}</option>
                             @endforeach
@@ -53,11 +53,11 @@
                     </div>
 
                     {{-- Año: recarga página (datos vienen del servidor) --}}
-                    <div class="flex flex-col gap-1">
+                    <div class="flex flex-col gap-1 w-full sm:w-auto">
                         <label class="text-[10px] uppercase tracking-widest font-bold text-gray-400">A&ntilde;o</label>
                         <select id="filter-year" name="year"
                                 style="padding-right: 2rem;"
-                                class="border border-gray-200 rounded-xl text-sm px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-gray-50 w-28">
+                                class="border border-gray-200 rounded-xl text-sm px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-gray-50 w-full sm:w-28">
                             @foreach($years as $y)
                                 <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
                             @endforeach
@@ -65,19 +65,19 @@
                     </div>
 
                     {{-- Buscador: filtrado instantáneo client-side --}}
-                    <div class="flex flex-col gap-1 flex-1 min-w-[180px]">
+                    <div class="flex flex-col gap-1 col-span-2 sm:flex-1 w-full">
                         <label class="text-[10px] uppercase tracking-widest font-bold text-gray-400">Buscar producto</label>
                         <input id="filter-search" type="text" value="{{ $search }}"
                                placeholder="Nombre o categor&iacute;a..."
                                autocomplete="off"
-                               class="border border-gray-200 rounded-xl text-sm px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-gray-50">
+                               class="border border-gray-200 rounded-xl text-sm px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-gray-50 w-full">
                     </div>
 
                     {{-- Ordenamiento: instantáneo client-side --}}
-                    <div class="flex flex-col gap-1">
+                    <div class="flex flex-col gap-1 col-span-2 sm:w-auto w-full">
                         <label class="text-[10px] uppercase tracking-widest font-bold text-gray-400">Ordenar por</label>
                         <select id="filter-sort"
-                                class="border border-gray-200 rounded-xl text-sm px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-gray-50 w-52">
+                                class="border border-gray-200 rounded-xl text-sm px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-gray-50 w-full sm:w-52">
                             <option value=""     {{ $sort === ''      ? 'selected' : '' }}>Seleccionar</option>
                             <option value="best" {{ $sort === 'best'  ? 'selected' : '' }}>&#8593; Mejor desempe&ntilde;o</option>
                             <option value="worst"{{ $sort === 'worst' ? 'selected' : '' }}>&#8595; Peor desempe&ntilde;o</option>
@@ -86,13 +86,13 @@
 
                     {{-- Limpiar --}}
                     <a href="{{ route('expenses.balance') }}"
-                       class="px-5 py-2 border border-gray-200 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-gray-700 hover:border-gray-300 rounded-xl transition-colors whitespace-nowrap">
+                       class="px-5 py-2 border border-gray-200 text-xs font-bold uppercase tracking-widest text-gray-500 hover:text-gray-700 hover:border-gray-300 rounded-xl transition-colors whitespace-nowrap text-center col-span-1 w-full sm:w-auto">
                         Limpiar
                     </a>
 
                     {{-- Exportar CSV --}}
                     <button type="submit" formaction="{{ route('expenses.export') }}" formmethod="GET"
-                       class="px-5 py-2 border border-emerald-200 bg-emerald-50 text-xs font-bold uppercase tracking-widest text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 rounded-xl transition-colors whitespace-nowrap ml-auto">
+                       class="px-5 py-2 border border-emerald-200 bg-emerald-50 text-xs font-bold uppercase tracking-widest text-emerald-600 hover:text-emerald-700 hover:bg-emerald-100 rounded-xl transition-colors whitespace-nowrap text-center col-span-1 w-full sm:w-auto sm:ml-auto">
                         Exportar CSV
                     </button>
 

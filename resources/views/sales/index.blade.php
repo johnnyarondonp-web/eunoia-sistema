@@ -6,8 +6,8 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 sm:p-8">
                 
                 <div class="mb-10 grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                     <div class="flex space-x-2">
@@ -165,7 +165,7 @@
             <p class="text-xs text-gray-400 uppercase tracking-widest mt-1 mb-4 text-center">Se restaurará el stock automáticamente</p>
             <div class="mb-5">
                 <label class="text-[9px] uppercase tracking-widest font-bold text-gray-400 block mb-1">Motivo de cancelación</label>
-                <textarea id="cancel_reason" name="cancel_reason" rows="2" required
+                <textarea id="cancel_reason" name="cancel_reason" form="cancelForm" rows="2" required
                     placeholder="Ej: cliente arrepentido, error al registrar..."
                     class="border border-gray-200 rounded-xl text-sm px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-red-200 resize-none"></textarea>
                 <p id="cancel-reason-error" class="hidden text-[9px] text-red-500 font-bold mt-1">El motivo debe tener al menos 5 caracteres.</p>

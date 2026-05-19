@@ -155,10 +155,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {{-- Header --}}
-            <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
                 <div>
                     <div class="flex items-center gap-3 mb-1 flex-wrap">
-                        <h2 class="font-cormorant text-4xl font-light tracking-wide text-eunoia-text" style="letter-spacing: 0.04em;">
+                        <h2 class="font-cormorant text-3xl sm:text-4xl font-light tracking-wide text-eunoia-text" style="letter-spacing: 0.04em;">
                             Panel de Inventario
                         </h2>
                         @if($bcvApiOk)
@@ -168,7 +168,7 @@
                                 <span class="text-sm font-bold text-gray-800">{{ number_format($bcvRate, 2, '.', '') }} Bs.</span>
                             </div>
                         @else
-                            <form action="{{ route('bcv.setManual') }}" method="POST" class="bg-red-50 border border-red-200 px-4 py-1.5 rounded-full shadow-sm flex items-center gap-2">
+                            <form action="{{ route('bcv.setManual') }}" method="POST" class="bg-red-50 border border-red-200 px-4 py-1.5 rounded-full shadow-sm flex flex-wrap items-center gap-2">
                                 @csrf
                                 <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse flex-shrink-0" title="API Caída"></span>
                                 <span class="text-[10px] font-black text-red-600 uppercase tracking-widest whitespace-nowrap">⚠ API BCV NO DISPONIBLE:</span>
@@ -181,18 +181,18 @@
                     <p class="text-[10px] text-gray-400 uppercase tracking-[0.3em]">Gestión exclusiva • Eunoia Cosmetics</p>
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <div class="relative">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                    <div class="relative w-full sm:w-72">
                         <input
                             type="text"
                             id="searchInput"
                             placeholder="Buscar producto o categoría..."
-                            class="border-none bg-white rounded-full px-6 py-2 text-xs shadow-sm focus:ring-1 focus:ring-eunoia-coral w-72"
+                            class="border-none bg-white rounded-full px-6 py-3 sm:py-2 text-xs shadow-sm focus:ring-1 focus:ring-eunoia-coral w-full"
                             autocomplete="off"
                         >
                     </div>
                     <a href="{{ route('products.create') }}"
-                       class="bg-eunoia-coral text-white text-[10px] font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-200 uppercase tracking-widest hover:bg-[#d97777] hover:shadow-md active:scale-95">
+                       class="bg-eunoia-coral text-white text-[10px] font-bold py-3 px-8 rounded-full shadow-lg transition-all duration-200 uppercase tracking-widest hover:bg-[#d97777] hover:shadow-md active:scale-95 text-center whitespace-nowrap">
                         + Agregar
                     </a>
                 </div>
@@ -349,7 +349,7 @@
                             </div>
                         @endif
 
-                        <div class="h-64 overflow-hidden relative">
+                        <div class="h-40 sm:h-64 overflow-hidden relative">
                             @if($product->image_path)
                                 <img src="{{ asset('storage/' . $product->image_path) }}" loading="lazy"
                                      class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 {{ $product->status == 0 ? 'opacity-50 grayscale' : '' }}">
@@ -366,24 +366,24 @@
                             @endif
                         </div>
 
-                        <div class="p-6 text-center">
+                        <div class="p-4 sm:p-6 text-center">
                             <span class="text-[9px] font-black text-eunoia-coral uppercase tracking-[0.2em] mb-1 block">{{ $product->category }}</span>
-                            <h3 class="text-sm font-bold text-eunoia-text truncate mb-1">{{ $product->name }}</h3>
+                            <h3 class="text-xs sm:text-sm font-bold text-eunoia-text truncate mb-1">{{ $product->name }}</h3>
                             <div class="mb-3">
-                                <p class="text-lg font-serif text-eunoia-text opacity-90 leading-tight">${{ number_format($product->price, 2) }}</p>
-                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                <p class="text-base sm:text-lg font-serif text-eunoia-text opacity-90 leading-tight">${{ number_format($product->price, 2) }}</p>
+                                <p class="text-[9px] sm:text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
                                     ≈ {{ number_format($product->price * $bcvRate, 2, ',', '.') }} Bs.
                                 </p>
                             </div>
                             <div class="pt-2 border-t border-gray-50">
                                 @if($product->stock <= 0)
-                                    <span class="text-[9px] font-bold text-red-400 uppercase tracking-widest">Sin existencias</span>
+                                    <span class="text-[8px] sm:text-[9px] font-bold text-red-400 uppercase tracking-widest">Sin existencias</span>
                                 @elseif($product->stock <= 5)
-                                    <span class="text-[9px] font-bold text-amber-500 uppercase tracking-widest animate-pulse">
+                                    <span class="text-[8px] sm:text-[9px] font-bold text-amber-500 uppercase tracking-widest animate-pulse">
                                         Solo {{ $product->stock }} disponibles!
                                     </span>
                                 @else
-                                    <span class="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                                    <span class="text-[8px] sm:text-[9px] font-bold text-gray-400 uppercase tracking-widest">
                                         Stock: {{ $product->stock }} uds.
                                     </span>
                                 @endif
@@ -741,18 +741,18 @@
                             Top
                         </div>
 
-                        <div class="h-48 overflow-hidden relative">
+                        <div class="h-32 sm:h-48 overflow-hidden relative">
                             ${imageHtml}
                             ${stockHtml}
                         </div>
 
-                        <div class="p-4 text-center">
+                        <div class="p-3 sm:p-4 text-center">
                             <span class="text-[9px] font-black text-eunoia-coral uppercase tracking-[0.2em] mb-1 block">${product.category || ''}</span>
                             <h3 class="text-xs font-bold text-eunoia-text truncate mb-1">${product.name || ''}</h3>
-                            <p class="text-base font-serif text-eunoia-text opacity-90">$${priceUsd}</p>
-                            <p class="text-[9px] font-bold text-gray-400">≈ ${priceBs} Bs.</p>
+                            <p class="text-sm sm:text-base font-serif text-eunoia-text opacity-90">$${priceUsd}</p>
+                            <p class="text-[8px] sm:text-[9px] font-bold text-gray-400">≈ ${priceBs} Bs.</p>
                             <div class="mt-2 pt-2 border-t border-gray-50">
-                                <span class="text-[9px] font-bold text-eunoia-coral uppercase tracking-widest">
+                                <span class="text-[8px] sm:text-[9px] font-bold text-eunoia-coral uppercase tracking-widest">
                                     ${product.totalSoldTop || 0} vendidos
                                 </span>
                             </div>

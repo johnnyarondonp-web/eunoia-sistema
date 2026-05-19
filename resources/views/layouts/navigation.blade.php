@@ -74,6 +74,15 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="text-[10px] uppercase tracking-widest font-bold">
                 {{ __('Inventario') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('sales.create')" :active="request()->routeIs('sales.create')" class="text-[10px] uppercase tracking-widest font-bold">
+                {{ __('Ventas') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('sales.index')" :active="request()->routeIs('sales.index')" class="text-[10px] uppercase tracking-widest font-bold">
+                {{ __('Registro de Ventas') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('expenses.balance')" :active="request()->routeIs('expenses.*')" class="text-[10px] uppercase tracking-widest font-bold">
+                {{ __('Balance') }}
+            </x-responsive-nav-link>
         </div>
 
         <div class="pt-4 pb-1 border-t border-gray-100">
