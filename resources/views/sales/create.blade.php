@@ -66,10 +66,10 @@
                 <form action="{{ route('sales.store') }}" method="POST" id="sales-form">
                     @csrf
                     
-                    <div class="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-                        <table class="w-full mb-8 min-w-[320px]" id="items-table">
+                    <div class="w-full">
+                        <table class="w-full mb-8" id="items-table">
                             <thead>
-                                <tr class="text-left border-b border-gray-100">
+                                <tr class="hidden sm:table-row text-left border-b border-gray-100">
                                     <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400">Producto</th>
                                     <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400 w-24 sm:w-32">Cantidad</th>
                                     <th class="pb-4 text-[10px] uppercase tracking-widest text-gray-400 w-20 sm:w-32 text-right">Acción</th>
@@ -205,8 +205,8 @@
 
         function addItem() {
             const html = `
-                <tr class="border-b border-gray-50 item-row" id="row-${rowIdx}">
-                    <td class="py-4">
+                <tr class="border-b border-gray-100 flex flex-col sm:table-row py-4 sm:py-0 item-row" id="row-${rowIdx}">
+                    <td class="py-2 sm:py-4 block sm:table-cell">
                         <select name="items[${rowIdx}][product_id]" class="product-select w-full" required>
                             <option value="">Buscar producto...</option>
                             @foreach($products as $product)
@@ -219,13 +219,19 @@
                             @endforeach
                         </select>
                     </td>
-                    <td class="py-4 px-2 sm:px-4 relative w-24 sm:w-32">
-                        <input type="number" name="items[${rowIdx}][quantity]" min="1" value="1" 
-                               class="qty-input w-full border-gray-200 text-sm focus:ring-0 focus:border-black">
-                        <span class="qty-min-error hidden text-[8px] text-red-500 font-bold uppercase absolute bottom-0 left-2 sm:left-4">Mínimo 1</span>
+                    <td class="py-2 sm:py-4 px-0 sm:px-4 relative block sm:table-cell w-full sm:w-32">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] uppercase tracking-widest text-gray-400 sm:hidden block mr-1 flex-shrink-0">Cantidad:</span>
+                            <input type="number" name="items[${rowIdx}][quantity]" min="1" value="1" 
+                                   class="qty-input w-full border-gray-200 text-sm focus:ring-0 focus:border-black">
+                        </div>
+                        <span class="qty-min-error hidden text-[8px] text-red-500 font-bold uppercase absolute bottom-0 left-0 sm:left-4">Mínimo 1</span>
                     </td>
-                    <td class="py-4 text-right w-20 sm:w-32">
-                        <button type="button" onclick="removeRow(${rowIdx})" class="text-red-400 hover:text-red-600 text-[10px] uppercase font-bold tracking-widest">Eliminar</button>
+                    <td class="py-2 sm:py-4 block sm:table-cell text-right w-full sm:w-32">
+                        <div class="flex items-center justify-between sm:justify-end gap-2 w-full">
+                            <span class="text-[9px] uppercase tracking-widest text-gray-400 sm:hidden block">Eliminar:</span>
+                            <button type="button" onclick="removeRow(${rowIdx})" class="text-red-400 hover:text-red-600 text-[10px] uppercase font-bold tracking-widest">Eliminar</button>
+                        </div>
                     </td>
                 </tr>
             `;
