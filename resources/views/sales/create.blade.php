@@ -5,10 +5,74 @@
 
     <style>
         .blur-content { filter: blur(5px); pointer-events: none; user-select: none; }
-        .select2-container--default .select2-selection--single { border-radius: 0; border-color: #e5e7eb; height: 45px; display: flex; align-items: center; }
-        .product-img { width: 30px; height: 30px; border-radius: 4px; object-fit: cover; margin-right: 10px; border: 1px solid #eee; }
+        
+        /* --- SELECT2 MODERNIZATION --- */
+        /* Container & Selection Field */
+        .select2-container--default .select2-selection--single { 
+            border-radius: 999px !important; 
+            border-color: #f3f4f6 !important; 
+            height: 48px !important; 
+            display: flex !important; 
+            align-items: center !important; 
+            padding: 0 15px !important;
+            background-color: #fdfdfd !important;
+            border-width: 1px !important;
+            transition: all 0.2s ease !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+        }
+        .select2-container--default.select2-container--focus .select2-selection--single { 
+            border-color: #E88C8C !important; 
+            box-shadow: 0 0 0 3px rgba(232, 140, 140, 0.15) !important;
+            background-color: #fff !important;
+        }
+        .select2-container--default .select2-selection__rendered { 
+            color: #4b5563 !important; 
+            font-size: 13px !important; 
+            line-height: 48px !important;
+        }
+        .select2-container--default .select2-selection__arrow { 
+            height: 48px !important; 
+        }
+
+        /* Dropdown Panel */
+        .select2-dropdown { 
+            border: none !important; 
+            border-radius: 1.5rem !important; 
+            overflow: hidden !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+            margin-top: 8px !important;
+        }
+        
+        /* Search Field inside Dropdown */
+        .select2-search--dropdown .select2-search__field { 
+            border-radius: 999px !important; 
+            border: 1px solid #f3f4f6 !important; 
+            padding: 8px 15px !important;
+            font-size: 13px !important;
+        }
+
+        /* Results Options */
+        .select2-results__option { 
+            padding: 10px 15px !important; 
+            font-size: 13px !important;
+            transition: all 0.2s ease !important;
+        }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] { 
+            background-color: #E88C8C !important; 
+            color: white !important; 
+        }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] .product-img {
+            border-color: rgba(255,255,255,0.5) !important;
+        }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] .text-gray-500 {
+            color: rgba(255,255,255,0.8) !important;
+        }
+
+        /* Custom product option styling */
+        .product-img { width: 32px; height: 32px; border-radius: 8px; object-fit: cover; margin-right: 12px; border: 1px solid #eee; }
         .product-option { display: flex; align-items: center; font-size: 13px; }
         .select2-container--default .select2-results__option[aria-disabled=true] { display: none; } 
+        
         /* Transición suave para la alerta */
         #ui-error-alert { transition: all 0.3s ease; }
         /* Responsividad absoluta para Select2 */
@@ -41,9 +105,9 @@
                             </button>
                         </div>
                     </div>
-                    <button type="button" id="add-item" class="w-full sm:w-auto border border-black text-black px-4 py-2 text-[10px] uppercase tracking-widest font-bold hover:bg-black hover:text-white transition">
-                        + Añadir Producto
-                    </button>
+<button type="button" id="add-item" class="w-full sm:w-auto border border-eunoia-coral text-eunoia-coral bg-white px-6 py-2 rounded-full text-[10px] uppercase tracking-widest font-bold hover:bg-eunoia-coral hover:text-white transition-all duration-200 shadow-sm active:scale-95">
+    + Añadir Producto
+</button>
                 </div>
 
                 @if ($errors->any())
@@ -151,20 +215,20 @@
             calculateTotals();
         });
 
-        function formatProduct(opt) {
-            if (!opt.id) return opt.text;
-            const img = $(opt.element).data('img');
-            const stock = $(opt.element).data('stock');
-            return $(`
-                <span class="product-option">
-                    <img src="${img}" class="product-img" onerror="this.src='https://placehold.co/50x50?text=?'" /> 
-                    <div class="flex flex-col">
-                        <b class="text-sm">${opt.text}</b>
-                        <span class="text-[10px] text-gray-500 uppercase tracking-tighter">Stock disponible: ${stock}</span>
-                    </div>
-                </span>
-            `);
-        }
+function formatProduct(opt) {
+    if (!opt.id) return opt.text;
+    const img = $(opt.element).data('img');
+    const stock = $(opt.element).data('stock');
+    return $(`
+        <span class="product-option">
+            <img src="${img}" class="product-img" onerror="this.src='https://placehold.co/50x50?text=?'" /> 
+            <div class="flex flex-col leading-tight">
+                <b class="text-sm font-bold">${opt.text}</b>
+                <span class="text-[10px] text-gray-500 uppercase tracking-tighter">Stock disponible: ${stock}</span>
+            </div>
+        </span>
+    `);
+}
 
         function updateAvailableProducts() {
             const selectedIds = [];
