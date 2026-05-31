@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Expense;
 use App\Models\Product;
 use App\Http\Requests\StoreExpenseRequest;
+use App\Exports\BalanceExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -124,27 +125,30 @@ class ExpenseController extends Controller
 
         $lotes = $this->buildLotesQuery($month, $year, $sort, $search)->get();
 
-        return response()->streamDownload(function () use ($lotes) {
-            $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Producto', 'Categoría', 'Lote ID', 'Cantidad comprada', 'Costo USD', 'Costo unitario', 'Unidades vendidas', 'Recaudado USD', 'Ganancia USD', 'ROI %']);
-            foreach ($lotes as $lote) {
-                $ganancia = $lote->total_recaudado - $lote->cost_usd;
-                $roi = $lote->cost_usd > 0 ? round(($ganancia / $lote->cost_usd) * 100, 1) : 0;
-                fputcsv($handle, [
-                    $lote->product->name ?? '',
-                    $lote->product->category ?? '',
-                    $lote->id,
-                    $lote->quantity,
-                    $lote->cost_usd,
-                    round($lote->cost_usd / max($lote->quantity, 1), 2),
-                    $lote->unidades_vendidas,
-                    $lote->total_recaudado,
-                    round($ganancia, 2),
-                    $roi,
-                ]);
-            }
-            fclose($handle);
-        }, "balance-{$year}-{$month}.csv", ['Content-Type' => 'text/csv']);
+        // Calculate KPIs for the summary section
+        $from = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $to   = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
+
+        $gastoMensual = Expense::whereBetween('created_at', [$from, $to])->sum('cost_usd');
+        $ventasMensuales = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->whereBetween('sales.created_at', [$from, $to])
+            ->whereNull('sales.cancelled_at')
+            ->sum(DB::raw('sale_items.quantity * sale_items.price_at_sale'));
+
+        $gananciaMensual = $ventasMensuales - $gastoMensual;
+        $roi = $gastoMensual > 0 ? round(($gananciaMensual / $gastoMensual) * 100, 1) : 0;
+
+        $kpis = [
+            'gastoMensual'    => (float)$gastoMensual,
+            'ventasMensuales' => (float)$ventasMensuales,
+            'gananciaMensual' => (float)$gananciaMensual,
+            'roi'             => $roi,
+        ];
+
+        $filename = "Balance_Eunoia_{$year}_{$month}.xlsx";
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new BalanceExport($month, $year, $lotes, $kpis), $filename);
     }
 
     /**
