@@ -5,7 +5,7 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-6 sm:py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 sm:p-8">
                 
@@ -37,7 +37,7 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div class="hidden sm:block overflow-x-auto">
                     <table class="w-full" id="sales-table">
                         <thead>
                             <tr class="text-left border-b border-gray-100">
@@ -68,7 +68,7 @@
                                     @foreach($sale->items as $item)
                                         <div class="flex items-center space-x-3 mb-2 product-item">
                                             <img src="{{ asset('storage/' . $item->product->image_path) }}" 
-                                                 class="w-8 h-8 rounded-full object-cover border shadow-sm">
+                                                  class="w-8 h-8 rounded-full object-cover border shadow-sm">
                                             <div class="flex flex-col">
                                                 <span class="text-xs font-bold text-gray-800">{{ $item->quantity }}x {{ $item->product->name }}</span>
                                                 <span class="text-[9px] text-gray-400 uppercase tracking-tighter">{{ $item->product->category }}</span>
@@ -95,6 +95,51 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{-- Mobile Cards --}}
+                <div class="sm:hidden space-y-4">
+                    @foreach($sales as $sale)
+                    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm sale-row {{ $sale->cancelled_at ? 'opacity-50' : '' }}" 
+                         data-products="{{ $sale->items->pluck('product.name')->join(' ') }}"
+                         data-category="{{ $sale->items->pluck('product.category')->join(' ') }}">
+                        <div class="flex justify-between items-start mb-3">
+                            <div>
+                                <p class="text-xs font-bold text-gray-800">{{ $sale->created_at->format('d/m/Y') }}</p>
+                                <p class="text-[10px] text-gray-400 uppercase">{{ $sale->created_at->format('h:i A') }}</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm font-black text-indigo-600">{{ number_format($sale->total_bs, 2, ',', '.') }} Bs.</p>
+                                <p class="text-[10px] font-bold text-gray-400">${{ number_format($sale->total_usd, 2, ',', '.') }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-2 mb-4">
+                            @foreach($sale->items as $item)
+                            <div class="flex items-center gap-3">
+                                <img src="{{ asset('storage/' . $item->product->image_path) }}" class="w-8 h-8 rounded-full object-cover border">
+                                <div class="flex-1">
+                                    <p class="text-xs font-medium text-gray-700">{{ $item->quantity }}x {{ $item->product->name }}</p>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+
+                        <div class="flex items-center justify-between pt-3 border-t border-gray-50">
+                            <span class="text-[9px] font-mono text-gray-400">Tasa: {{ number_format($sale->bcv_rate, 2, ',', '.') }}</span>
+                            @if(is_null($sale->cancelled_at))
+                                <button type="button" 
+                                        onclick="openCancelModal('{{ route('sales.cancel', $sale) }}')"
+                                        class="text-red-500 text-[10px] uppercase font-bold tracking-widest px-3 py-1 rounded-full bg-red-50 hover:bg-red-100 transition">
+                                    Cancelar
+                                </button>
+                            @else
+                                <span class="text-red-400 text-[9px] font-bold uppercase">Cancelada</span>
+                            @endif
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+
             </div>
         </div>
     </div>

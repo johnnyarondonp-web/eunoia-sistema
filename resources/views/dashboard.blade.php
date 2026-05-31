@@ -9,6 +9,7 @@
         .filter-btn {
             transition: all 0.2s ease;
             cursor: pointer;
+            white-space: nowrap;
         }
         .filter-btn.active {
             background-color: #E88C8C;
@@ -151,7 +152,7 @@
         }
     </style>
 
-    <div class="py-12 bg-white min-h-screen">
+    <div class="py-6 sm:py-12 bg-white min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {{-- Header --}}
@@ -206,7 +207,7 @@
 
             {{-- Filter Buttons --}}
             <div class="mb-4" id="filterArea">
-                <div class="flex flex-wrap gap-2" id="filterButtons">
+                <div class="flex overflow-x-auto no-scrollbar gap-2 pb-2 sm:flex-wrap" id="filterButtons">
                     <button onclick="setFilter('all', event)" id="btn-all"
                             class="filter-btn text-[9px] font-black uppercase tracking-widest px-5 py-2 rounded-full border border-gray-200 bg-white shadow-sm">
                         Todos

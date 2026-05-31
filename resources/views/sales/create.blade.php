@@ -21,7 +21,7 @@
         </h2>
     </x-slot>
 
-    <div id="main-content" class="py-12 transition-all duration-300">
+    <div id="main-content" class="py-6 sm:py-12 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-4 sm:p-8 border border-gray-100">
                 
@@ -207,7 +207,7 @@
 
         function addItem() {
             const html = `
-                <tr class="border-b border-gray-100 flex flex-col sm:table-row py-4 sm:py-0 item-row" id="row-${rowIdx}">
+                <tr class="border-b border-gray-100 flex flex-col sm:table-row py-4 sm:py-0 item-row bg-gray-50 sm:bg-white rounded-2xl sm:rounded-none mb-4 sm:mb-0 p-4 sm:p-0 shadow-sm sm:shadow-none" id="row-${rowIdx}">
                     <td class="py-2 sm:py-4 block sm:table-cell">
                         <select name="items[${rowIdx}][product_id]" class="product-select w-full" required>
                             <option value="">Buscar producto...</option>
@@ -225,19 +225,20 @@
                         <div class="flex items-center gap-2">
                             <span class="text-[9px] uppercase tracking-widest text-gray-400 sm:hidden block mr-1 flex-shrink-0">Cantidad:</span>
                             <input type="number" name="items[${rowIdx}][quantity]" min="1" value="1" 
-                                   class="qty-input w-full border-gray-200 text-sm focus:ring-0 focus:border-black">
+                                    class="qty-input w-full border-gray-200 text-sm focus:ring-0 focus:border-black rounded-lg">
                         </div>
                         <span class="qty-min-error hidden text-[8px] text-red-500 font-bold uppercase absolute bottom-0 left-0 sm:left-4">Mínimo 1</span>
                     </td>
                     <td class="py-2 sm:py-4 block sm:table-cell text-right w-full sm:w-32">
                         <div class="flex items-center justify-between sm:justify-end gap-2 w-full">
                             <span class="text-[9px] uppercase tracking-widest text-gray-400 sm:hidden block">Eliminar:</span>
-                            <button type="button" onclick="removeRow(${rowIdx})" class="text-red-400 hover:text-red-600 text-[10px] uppercase font-bold tracking-widest">Eliminar</button>
+                            <button type="button" onclick="removeRow(${rowIdx})" class="text-red-400 hover:text-red-600 text-[10px] uppercase font-bold tracking-widest bg-red-50 sm:bg-transparent px-3 py-1 rounded-full sm:p-0 transition">Eliminar</button>
                         </div>
                     </td>
                 </tr>
             `;
             $('#items-body').append(html);
+
             
             const currentRow = $(`#row-${rowIdx}`);
             const newSelect = currentRow.find('.product-select');
