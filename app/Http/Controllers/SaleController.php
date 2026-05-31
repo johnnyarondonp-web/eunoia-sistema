@@ -32,7 +32,7 @@ class SaleController extends Controller
         $to = $request->get('to', now()->endOfMonth()->format('Y-m-d'));
         $query->whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59']);
 
-        $sales = $query->latest()->get();
+        $sales = $query->latest()->paginate(25);
         $title = "Registro de Ventas";
 
         return view('sales.index', compact('sales', 'title', 'from', 'to'));
@@ -97,6 +97,9 @@ class SaleController extends Controller
             Cache::forget('top_products_week');
             Cache::forget('top_products_month');
             Cache::forget('top_products_year');
+            
+            // Invalida cache de balance del mes actual
+            Cache::forget("balance_kpis_" . now()->month . "_" . now()->year);
 
             return redirect()->route('sales.index')->with('success', 'Venta registrada correctamente.');
         } catch (\Exception $e) {
@@ -138,6 +141,9 @@ class SaleController extends Controller
         Cache::forget('top_products_week');
         Cache::forget('top_products_month');
         Cache::forget('top_products_year');
+        
+        // Invalida cache de balance del mes en que ocurrió la venta
+        Cache::forget("balance_kpis_" . $sale->created_at->month . "_" . $sale->created_at->year);
 
         return back()->with('success', 'Venta cancelada y stock restaurado.');
     }

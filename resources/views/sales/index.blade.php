@@ -95,6 +95,12 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="mt-6">
+                    {{ $sales->links() }}
+                </div>
+            </div>
+        </div>
+    </div>
 
                 {{-- Mobile Cards --}}
                 <div class="sm:hidden space-y-4">
