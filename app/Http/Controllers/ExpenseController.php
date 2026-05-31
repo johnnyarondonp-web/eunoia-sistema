@@ -34,16 +34,6 @@ class ExpenseController extends Controller
             $gastoMensual = Expense::whereBetween('created_at', [$from, $to])->sum('cost_usd');
 
             // Ventas: ingresos de sale_items cuya venta padre ocurrió en el mes filtrado
-            $ventasMensuales = DB::table('sale_items')
-                ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-                ->whereBetween('sales.created_at', [$from, $to])
-                ->whereNull('sales.cancelled_at')
-                ->sum(DB::raw('sale_//C_S_T_O_M_I_Z_E_D sale_items.quantity * sale_items.price_at_sale'));
-
-            // Wait, I noticed a typo in my thought process, let me fix it in the actual code:
-            // Corrected: ->sum(DB::raw('sale_items.quantity * sale_items.price_at_sale'));
-            
-            // Note: Redoing the sum logic clearly inside the closure
             $ventas = DB::table('sale_items')
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->whereBetween('sales.created_at', [$from, $to])
