@@ -9,28 +9,27 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
             {{-- ── CARDS DE RESUMEN ─────────────────────────────────────────── --}}
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="balance-kpis">
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                     <span class="text-[10px] uppercase tracking-widest font-bold text-gray-400 block mb-1">Inversi&oacute;n del Mes</span>
-                    <span class="text-xl sm:text-2xl font-bold text-gray-800">${{ number_format($gastoMensual, 2) }}</span>
+                    <span id="kpi-investment" class="text-xl sm:text-2xl font-bold text-gray-800">${{ number_format($gastoMensual, 2) }}</span>
                 </div>
 
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                     <span class="text-[10px] uppercase tracking-widest font-bold text-gray-400 block mb-1">Ventas Mensuales</span>
-                    <span class="text-xl sm:text-2xl font-bold text-gray-800">${{ number_format($ventasMensuales, 2) }}</span>
+                    <span id="kpi-sales" class="text-xl sm:text-2xl font-bold text-gray-800">${{ number_format($ventasMensuales, 2) }}</span>
                 </div>
 
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                     <span class="text-[10px] uppercase tracking-widest font-bold text-gray-400 block mb-1">Ganancia Neta</span>
-                    <span class="text-xl sm:text-2xl font-bold {{ $gananciaMensual >= 0 ? 'text-emerald-600' : 'text-red-500' }}">
+                    <span id="kpi-profit" class="text-xl sm:text-2xl font-bold {{ $gananciaMensual >= 0 ? 'text-emerald-600' : 'text-red-500' }}">
                         {{ $gananciaMensual >= 0 ? '+' : '' }}${{ number_format($gananciaMensual, 2) }}
                     </span>
                 </div>
 
                 <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100">
                     <span class="text-[10px] uppercase tracking-widest font-bold text-gray-400 block mb-1">Retorno (ROI)</span>
-                    <span class="text-xl sm:text-2xl font-bold {{ $roi >= 0 ? 'text-indigo-600' : 'text-red-500' }}">
+                    <span id="kpi-roi" class="text-xl sm:text-2xl font-bold {{ $roi >= 0 ? 'text-indigo-600' : 'text-red-500' }}">
                         {{ $roi >= 0 ? '+' : '' }}{{ $roi }}%
                     </span>
                 </div>
@@ -41,7 +40,7 @@
                 <form id="balance-form" method="GET" action="{{ route('expenses.balance') }}"
                       class="grid grid-cols-2 sm:flex sm:flex-wrap items-end gap-4">
 
-                    {{-- Mes: recarga página (datos vienen del servidor) --}}
+                    {{-- Mes --}}
                     <div class="flex flex-col gap-1 w-full sm:w-auto">
                         <label class="text-[10px] uppercase tracking-widest font-bold text-gray-400">Mes</label>
                         <select id="filter-month" name="month"
@@ -52,7 +51,7 @@
                         </select>
                     </div>
 
-                    {{-- Año: recarga página (datos vienen del servidor) --}}
+                    {{-- Año --}}
                     <div class="flex flex-col gap-1 w-full sm:w-auto">
                         <label class="text-[10px] uppercase tracking-widest font-bold text-gray-400">A&ntilde;o</label>
                         <select id="filter-year" name="year"
@@ -64,7 +63,7 @@
                         </select>
                     </div>
 
-                    {{-- Buscador: filtrado instantáneo client-side --}}
+                    {{-- Buscador --}}
                     <div class="flex flex-col gap-1 col-span-2 sm:flex-1 w-full">
                         <label class="text-[10px] uppercase tracking-widest font-bold text-gray-400">Buscar producto</label>
                         <input id="filter-search" type="text" value="{{ $search }}"
@@ -73,7 +72,7 @@
                                class="border border-gray-200 rounded-xl text-sm px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-gray-50 w-full">
                     </div>
 
-                    {{-- Ordenamiento: instantáneo client-side --}}
+                    {{-- Ordenamiento --}}
                     <div class="flex flex-col gap-1 col-span-2 sm:w-auto w-full">
                         <label class="text-[10px] uppercase tracking-widest font-bold text-gray-400">Ordenar por</label>
                         <select id="filter-sort"
@@ -96,15 +95,12 @@
                         Exportar CSV
                     </button>
 
-                    {{-- Submit oculto (fallback sin JS) --}}
                     <button type="submit" class="hidden" aria-hidden="true"></button>
-
                 </form>
             </div>
 
             {{-- ── TABLA DE LOTES ───────────────────────────────────────────── --}}
-            <div class="bg-white overflow-hidden shadow-sm rounded-2xl border border-gray-100">
-
+            <div class="bg-white overflow-hidden shadow-sm rounded-2xl border border-gray-100" id="balance-content">
                 <div class="p-6 border-b border-gray-50 flex justify-between items-center">
                     <h3 class="text-xs font-bold text-gray-800 uppercase tracking-widest">
                         Desglose por Lotes de Compra
@@ -114,139 +110,18 @@
                     </span>
                 </div>
 
-                @if($lotes->isEmpty())
-                    <div class="p-12 text-center">
+                    <div class="p-12 text-center" id="empty-state" style="{{ $lotes->isEmpty() ? '' : 'display: none;' }}">
                         <p class="text-sm text-gray-400">No hay lotes registrados para este per&iacute;odo.</p>
                     </div>
-                @else
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse" id="lotes-table">
-                            <thead>
-                                <tr class="bg-gray-50/70">
-                                    <th class="p-4 text-[10px] uppercase tracking-widest text-gray-400 font-bold">Producto / Fecha</th>
-                                    <th class="p-4 text-[10px] uppercase tracking-widest text-gray-400 font-bold text-center">Inversi&oacute;n</th>
-                                    <th class="p-4 text-[10px] uppercase tracking-widest text-gray-400 font-bold text-center">Stock</th>
-                                    <th class="p-4 text-[10px] uppercase tracking-widest text-gray-400 font-bold text-center">Ventas</th>
-                                    <th class="p-4 text-[10px] uppercase tracking-widest text-gray-400 font-bold text-center">Progreso</th>
-                                    <th class="p-4 text-[10px] uppercase tracking-widest text-gray-400 font-bold text-right">Ganancia Generada</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50" id="lotes-tbody">
-                                @foreach($lotes as $lote)
-                                @php
-                                    $gananciaLote = max(0, $lote->total_recaudado - $lote->cost_usd);
-                                    $recuperado   = $lote->cost_usd > 0
-                                        ? min(100, round(($lote->total_recaudado / $lote->cost_usd) * 100))
-                                        : 0;
-                                    $enPositivo   = $lote->total_recaudado >= $lote->cost_usd;
-                                @endphp
-                                {{-- data-search: texto para búsqueda | data-ganancia: para ordenar --}}
-                                <tr class="hover:bg-gray-50/60 transition-colors"
-                                    data-search="{{ strtolower(($lote->product->name ?? '') . ' ' . ($lote->product->category ?? '')) }}"
-                                    data-ganancia="{{ $gananciaLote }}">
 
-                                    <td class="p-4">
-                                        <div class="flex items-center space-x-3">
-                                            <img src="{{ isset($lote->product) && $lote->product->image_path
-                                                            ? asset('storage/' . $lote->product->image_path)
-                                                            : asset('img/default.png') }}"
-                                                 class="w-10 h-10 rounded-lg object-cover border border-gray-100"
-                                                 alt="{{ $lote->product->name ?? 'Producto' }}">
-                                            <div>
-                                                <span class="text-sm font-bold text-gray-800">
-                                                    {{ $lote->product->name ?? 'Producto Eliminado' }}
-                                                </span>
-                                                <span class="text-[10px] text-gray-400 uppercase tracking-tighter block">
-                                                    Lote #{{ $lote->id }} &middot; {{ $lote->created_at?->format('d/m/Y') ?? 'Sin fecha' }}
-                                                </span>
-                                                @if(isset($lote->product->category))
-                                                    <span class="text-[10px] text-indigo-400 uppercase tracking-tighter">
-                                                        {{ $lote->product->category }}
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <td class="p-4 text-center">
-                                        <span class="text-sm font-medium text-gray-600">
-                                            ${{ number_format($lote->cost_usd, 2) }}
-                                        </span>
-                                    </td>
-
-                                    <td class="p-4 text-center">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                                            {{ $lote->remaining_quantity > 0 ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-500' }}">
-                                            {{ $lote->remaining_quantity }} de {{ $lote->quantity }}
-                                        </span>
-                                    </td>
-
-                                    <td class="p-4 text-center">
-                                        <span class="text-sm font-bold text-gray-700">
-                                            ${{ number_format($lote->total_recaudado, 2) }}
-                                        </span>
-                                    </td>
-
-                                    <td class="p-4">
-                                        <div class="w-full bg-gray-100 rounded-full h-1.5 min-w-[80px]">
-                                            <div class="h-1.5 rounded-full transition-all
-                                                {{ $enPositivo ? 'bg-emerald-400' : 'bg-amber-400' }}"
-                                                 style="width: {{ $recuperado }}%">
-                                            </div>
-                                        </div>
-                                        <span class="text-[10px] text-gray-400 mt-0.5 block text-center">
-                                            {{ $recuperado }}% recuperado
-                                        </span>
-                                    </td>
-
-                                    <td class="p-4 text-right">
-                                        @if($enPositivo)
-                                            <span class="text-sm font-bold text-emerald-600">
-                                                +${{ number_format($gananciaLote, 2) }}
-                                            </span>
-                                        @else
-                                            <span class="text-xs text-amber-500 font-medium">
-                                                Faltan ${{ number_format($lote->cost_usd - $lote->total_recaudado, 2) }}
-                                            </span>
-                                        @endif
-                                    </td>
-
-                                </tr>
-                                @endforeach
-                            </tbody>
-
-                            <tfoot>
-                                <tr class="bg-gray-50/70 border-t border-gray-200">
-                                    <td class="p-4 text-xs font-bold text-gray-500 uppercase tracking-widest">
-                                        Totales del per&iacute;odo
-                                    </td>
-                                    <td class="p-4 text-center text-sm font-bold text-gray-700">
-                                        ${{ number_format($gastoMensual, 2) }}
-                                    </td>
-                                    <td class="p-4"></td>
-                                    <td class="p-4 text-center text-sm font-bold text-gray-700">
-                                        ${{ number_format($ventasMensuales, 2) }}
-                                    </td>
-                                    <td class="p-4"></td>
-                                    <td class="p-4 text-right text-sm font-bold {{ $gananciaMensual >= 0 ? 'text-emerald-600' : 'text-red-500' }}">
-                                        {{ $gananciaMensual >= 0 ? '+' : '' }}${{ number_format($gananciaMensual, 2) }}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-
-                        {{-- Mensaje cuando no hay resultados tras búsqueda --}}
-                        <div id="no-results" class="p-12 text-center hidden">
-                            <p class="text-sm text-gray-400">Ningún lote coincide con tu búsqueda.</p>
-                        </div>
+                    <div id="table-container" style="{{ $lotes->isEmpty() ? 'display: none;' : '' }}">
+                        @include('expenses.partials.balance_table')
                     </div>
-                    
-                    <div class="px-6 py-4 border-t border-gray-50">
+
+                    <div class="px-6 py-4 border-t border-gray-50" id="pagination-container" style="{{ $lotes->isEmpty() ? 'display: none;' : '' }}">
                         {{ $lotes->links() }}
                     </div>
-                @endif
             </div>
-
         </div>
     </div>
 
@@ -262,62 +137,96 @@
         var noResults = document.getElementById('no-results');
         var countEl   = document.getElementById('lotes-count');
 
-        if (!tbody) return; // tabla vacía, nada que hacer
+        // ── AJAX Filter Update ────────────────────────────────────────────────
+        function updateBalance() {
+            var m = month.value;
+            var y = year.value;
+            var s = sort.value;
+            var q = search.value;
 
-        // ── Mes y Año: siguen haciendo submit (necesitan datos del servidor) ──
-        [month, year].forEach(function (el) {
-            el.addEventListener('change', function () { form.submit(); });
-        });
+            // Visual feedback: fade out content
+            var content = document.getElementById('balance-content');
+            var kpis = document.getElementById('balance-kpis');
+            if (content) content.style.opacity = '0.5';
+            if (kpis) kpis.style.opacity = '0.5';
 
-        // ── Buscador + Ordenamiento: client-side instantáneo ─────────────────
+            fetch(`{{ route('expenses.balance') }}?month=${m}&year=${y}&sort=${s}&search=${q}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log('Status:', response.status);
+                return response.text();
+            })
+            .then(text => {
+                console.log('Response:', text.substring(0, 500));
+                var data = JSON.parse(text);
+                // Update KPIs
+                document.getElementById('kpi-investment').textContent = data.kpis.gastoMensual;
+                document.getElementById('kpi-sales').textContent = data.kpis.ventasMensuales;
+                
+                var profitEl = document.getElementById('kpi-profit');
+                profitEl.textContent = data.kpis.gananciaMensual;
+                profitEl.className = 'text-xl sm:text-2xl font-bold ' + data.kpis.ganancia_color;
 
-        function applyFilters() {
-            var query   = search.value.toLowerCase().trim();
-            var sortVal = sort.value;
+                var roiEl = document.getElementById('kpi-roi');
+                roiEl.textContent = data.kpis.roi;
+                roiEl.className = 'text-xl sm:text-2xl font-bold ' + data.kpis.roi_color;
 
-            // 1. Obtener todas las filas y filtrar por búsqueda
-            var rows = Array.from(tbody.querySelectorAll('tr'));
+                // Update Table
+                var container = document.getElementById('table-container');
+                var emptyState = document.getElementById('empty-state');
+                var pagination = document.getElementById('pagination-container');
 
-            rows.forEach(function (row) {
-                var text = (row.dataset.search || '').toLowerCase();
-                var match = query === '' || text.indexOf(query) !== -1;
-                row.style.display = match ? '' : 'none';
+                if (data.lotes_count > 0) {
+                    if (container) {
+                        container.innerHTML = data.table_html;
+                        container.style.display = 'block';
+                    }
+                    if (emptyState) emptyState.style.display = 'none';
+                    if (pagination) {
+                        pagination.innerHTML = data.pagination_html;
+                        pagination.style.display = 'block';
+                    }
+                } else {
+                    if (container) container.style.display = 'none';
+                    if (emptyState) emptyState.style.display = 'block';
+                    if (pagination) pagination.style.display = 'none';
+                }
+
+                if (countEl) {
+                    countEl.textContent = data.count_text;
+                }
+
+                // Update URL without reloading
+                window.history.pushState({}, '', `?month=${m}&year=${y}&sort=${s}&search=${q}`);
+                
+                // Restore opacity
+                if (content) content.style.opacity = '1';
+                if (kpis) kpis.style.opacity = '1';
+            })
+            .catch(error => {
+                console.error('Error updating balance:', error);
+                if (content) content.style.opacity = '1';
+                if (kpis) kpis.style.opacity = '1';
             });
-
-            // 2. Ordenar las filas visibles según ganancia
-            if (sortVal === 'best' || sortVal === 'worst') {
-                var visibles = rows.filter(function (r) { return r.style.display !== 'none'; });
-
-                visibles.sort(function (a, b) {
-                    var ga = parseFloat(a.dataset.ganancia) || 0;
-                    var gb = parseFloat(b.dataset.ganancia) || 0;
-                    return sortVal === 'best' ? gb - ga : ga - gb;
-                });
-
-                // Re-insertar en el DOM en el nuevo orden
-                visibles.forEach(function (row) { tbody.appendChild(row); });
-            }
-
-            // 3. Actualizar contador y mensaje vacío
-            var visibleCount = rows.filter(function (r) { return r.style.display !== 'none'; }).length;
-
-            if (countEl) {
-                countEl.textContent = visibleCount + (visibleCount === 1 ? ' lote' : ' lotes');
-            }
-            if (noResults) {
-                noResults.classList.toggle('hidden', visibleCount > 0);
-            }
         }
 
-        // Buscador: instantáneo al escribir
-        search.addEventListener('input', applyFilters);
+        // Trigger AJAX update on change
+        [month, year, sort].forEach(function (el) {
+            el.addEventListener('change', updateBalance);
+        });
 
-        // Ordenamiento: instantáneo al cambiar
-        sort.addEventListener('change', applyFilters);
+        // Search: debounce to avoid too many requests
+        var searchTimeout;
+        search.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(updateBalance, 300);
+        });
 
-        // Aplicar filtros iniciales si vienen valores del servidor
-        applyFilters();
+        // We keep form.submit() only for the "Export CSV" button (which uses formaction)
     })();
     </script>
-
 </x-app-layout>

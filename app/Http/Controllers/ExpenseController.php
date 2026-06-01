@@ -30,10 +30,9 @@ class ExpenseController extends Controller
         $cacheKey = "balance_kpis_{$year}_{$month}";
         
         $kpiData = \Illuminate\Support\Facades\Cache::remember($cacheKey, now()->addHours(24), function () use ($from, $to) {
-            // Inversión: lotes comprados dentro del mes filtrado
             $gastoMensual = Expense::whereBetween('created_at', [$from, $to])->sum('cost_usd');
 
-            // Ventas: ingresos de sale_items cuya venta padre ocurrió en el mes filtrado
+            // Fixed typo in raw sum
             $ventas = DB::table('sale_items')
                 ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
                 ->whereBetween('sales.created_at', [$from, $to])
@@ -56,26 +55,39 @@ class ExpenseController extends Controller
         $gananciaMensual = $kpiData['gananciaMensual'];
         $roi = $kpiData['roi'];
 
-        // ═══════════════════════════════════════════════════════════════════════
-        //  BLOQUE 2 — RENDIMIENTO HISTÓRICO DE LOTES (Optimizado)
+// ═══════════════════════════════════════════════════════════════════════
+        // BLOQUE 2 — RENDIMIENTO HISTÓRICO DE LOTES (Optimizado)
         // ═══════════════════════════════════════════════════════════════════════
 
-        $sort   = $request->input('sort', '');
-        $search = $request->input('search', '');
+        $sort   = (string) $request->input('sort', '');
+        $search = (string) $request->input('search', '');
 
         $lotes = $this->buildLotesQuery($month, $year, $sort, $search)->paginate(25);
+
+        // AJAX Response: Return JSON if request wants JSON
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'kpis' => [
+                    'gastoMensual' => '$' . number_format($gastoMensual, 2),
+                    'ventasMensuales' => '$' . number_format($ventasMensuales, 2),
+                    'gananciaMensual' => ($gananciaMensual >= 0 ? '+' : '') . '$' . number_format($gananciaMensual, 2),
+                    'roi' => ($roi >= 0 ? '+' : '') . $roi . '%',
+                    'ganancia_color' => $gananciaMensual >= 0 ? 'text-emerald-600' : 'text-red-500',
+                    'roi_color' => $roi >= 0 ? 'text-indigo-600' : 'text-red-500',
+                ],
+                'table_html' => view('expenses.partials.balance_table', compact('lotes'))->render(),
+                'pagination_html' => $lotes->links()->render(),
+                'lotes_count' => $lotes->total(),
+                'count_text' => $lotes->total() . ($lotes->total() === 1 ? ' lote' : ' lotes'),
+                'title' => 'Balance y Rentabilidad — ' . ($this->getMesNombre($month)) . ' ' . $year,
+            ]);
+        }
 
         // ═══════════════════════════════════════════════════════════════════════
         //  DATOS AUXILIARES PARA LA VISTA
         // ═══════════════════════════════════════════════════════════════════════
 
-        $meses = [
-            1  => 'Enero',      2  => 'Febrero',    3  => 'Marzo',
-            4  => 'Abril',      5  => 'Mayo',        6  => 'Junio',
-            7  => 'Julio',      8  => 'Agosto',      9  => 'Septiembre',
-            10 => 'Octubre',    11 => 'Noviembre',   12 => 'Diciembre',
-        ];
-
+        $meses = $this->getMeses();
         $firstYear = (int) (Expense::min(DB::raw('YEAR(created_at)')) ?? now()->year);
         $years     = range($firstYear, now()->year);
         $title     = 'Balance y Rentabilidad — ' . $meses[$month] . ' ' . $year;
@@ -94,6 +106,19 @@ class ExpenseController extends Controller
             'sort',
             'search',
         ));
+    }
+
+    private function getMeses() {
+        return [
+            1  => 'Enero',      2  => 'Febrero',    3  => 'Marzo',
+            4  => 'Abril',      5  => 'Mayo',        6  => 'Junio',
+            7  => 'Julio',      8  => 'Agosto',      9  => 'Septiembre',
+            10 => 'Octubre',    11 => 'Noviembre',   12 => 'Diciembre',
+        ];
+    }
+
+    private function getMesNombre($month) {
+        return $this->getMeses()[$month] ?? 'Desconocido';
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -175,6 +200,7 @@ class ExpenseController extends Controller
         $normalizedSales = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->whereNull('sales.cancelled_at')
+            ->whereBetween('sales.created_at', [$from, $to])
             ->select('sale_items.expense_id as exp_id', 'sale_items.quantity', DB::raw('sale_items.quantity * sale_items.price_at_sale as amount'))
             ->unionAll(
                 DB::table('sale_items')
@@ -182,6 +208,7 @@ class ExpenseController extends Controller
                     ->join(DB::raw('(SELECT product_id, MIN(id) as id FROM expenses GROUP BY product_id) as min_lots'), 'sale_items.product_id', '=', 'min_lots.product_id')
                     ->whereNull('sales.cancelled_at')
                     ->whereNull('sale_items.expense_id')
+                    ->whereBetween('sales.created_at', [$from, $to])
                     ->select('min_lots.id as exp_id', 'sale_items.quantity', DB::raw('sale_items.quantity * sale_items.price_at_sale as amount'))
             );
 
