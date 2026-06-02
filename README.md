@@ -1,88 +1,143 @@
-# Eunoia Sistema 🌌
+<div align="center">
 
-**Eunoia** es un sistema avanzado de gestión de inventario y punto de venta (POS) diseñado para optimizar el control de existencias, el cálculo de ganancias reales y el manejo multi-moneda en entornos dinámicos.
+# Eunoia Sistema
 
----
+**Sistema de gestión de inventario y punto de venta con lógica contable FIFO y soporte multi-moneda en tiempo real.**
 
-## 🛠️ Stack Tecnológico
+[![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?style=flat-square&logo=php&logoColor=white)](https://php.net)
+[![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
+[![Vite](https://img.shields.io/badge/Vite-8.0-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.1-38BDF8?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22C55E?style=flat-square)](LICENSE)
 
-El sistema está construido sobre las versiones más recientes y estables para garantizar rendimiento y seguridad:
-
-### **Backend**
-- **PHP:** `8.3.1` (Zend Engine v4.3.1)
-- **Framework:** `Laravel 13.5.0`
-- **Base de Datos:** MySQL / SQLite (Soporta transacciones ACID para integridad de datos)
-- **Servicios Externos:** Integración con [DolarAPI](https://ve.dolarapi.com) para tasas en tiempo real.
-
-### **Frontend**
-- **Vite:** `8.0.0` (Bundler de última generación)
-- **Tailwind CSS:** `3.1.0` (con plugin de Vite `^4.0.0`)
-- **Alpine.js:** `3.4.2` (Reactividad ligera para la UI)
-- **Axios:** `1.15.0` (Comunicación asíncrona)
+</div>
 
 ---
 
-## 🧠 Lógica y Funcionamiento del Sistema
-
-Eunoia no es solo un registro de ventas; es una herramienta de inteligencia de negocios que aplica reglas contables precisas.
-
-### 1. Gestión de Inventario mediante Lotes (FIFO)
-El sistema utiliza la metodología **FIFO (First-In, First-Out)** para la salida de mercancía.
-- **¿Cómo funciona?** Cada vez que registras una compra de mercancía (Gasto/Expense), el sistema crea un "lote" con un costo específico.
-- **Lógica de Venta:** Cuando se realiza una venta, el `LotDeductionService` busca el lote más antiguo con existencia y descuenta de allí. Si la venta supera la existencia de un lote, salta al siguiente.
-- **Cálculo de Ganancia:** La ganancia (`profit`) se calcula de forma individual para cada `SaleItem` comparando el precio de venta actual contra el costo unitario del lote específico del que salió el producto. Esto permite saber exactamente cuánto se ganó, incluso si compraste el mismo producto a diferentes precios en el tiempo.
-
-### 2. Manejo Multi-Moneda Dinámico
-Diseñado para economías con fluctuación cambiaria (como Venezuela).
-- **Tasa BCV Automática:** El `DolarService` consulta la API de BCV cada 30 minutos y cachea el resultado para máxima velocidad.
-- **Respaldo Manual:** Si la API falla, el sistema utiliza una tasa manual configurada por el administrador en la base de datos.
-- **Precios en USD, Pagos en BS:** El sistema permite fijar precios en dólares pero calcula automáticamente el total en Bolívares al momento de la venta usando la tasa más reciente.
-
-### 3. Integridad de Transacciones
-Todas las operaciones críticas (Ventas y Cancelaciones) están envueltas en **DB Transactions**.
-- **Ventas:** Se descuenta stock, se asignan lotes y se crean los registros de venta en una sola operación atómica. Si algo falla, el stock no se toca.
-- **Cancelaciones:** Al cancelar una venta, el sistema es capaz de rastrear exactamente de qué lotes salió la mercancía y **restaurar** la cantidad restante en esos lotes específicos, devolviendo el stock al estado exacto anterior a la venta.
+> **El problema que resuelve:** En negocios con alta rotación de inventario y economías con fluctuación cambiaria, calcular la ganancia real de cada venta es casi imposible de forma manual. Los precios de compra cambian, el tipo de cambio fluctua por hora, y los sistemas genéricos no distinguen entre el costo de un lote antiguo y uno reciente. Eunoia resuelve esto con precisión contable.
 
 ---
 
-## 🚀 Módulos Principales
+## Vista previa
+
+### Dashboard
+
+![Dashboard](.github/assets/eunoia-dashboard.png)
+
+### Venta
+
+![Venta](.github/assets/eunoia-ventas.png)
+
+### Balance
+
+![Balance](.github/assets/eunoia-balance.png)
+
+### Mobile
+
+![Mobile](.github/assets/eunoia-mobile.webp)
+
+---
+
+## Características principales
+
+**Inventario por lotes (FIFO)**
+Cada compra genera un lote con su costo unitario registrado. Al vender, el sistema descuenta automáticamente del lote más antiguo con existencia disponible. Si una venta supera la capacidad de un lote, avanza al siguiente sin intervención manual.
+
+**Cálculo de ganancia real por item**
+La ganancia no se calcula sobre un precio promedio. Se calcula comparando el precio de venta de cada `SaleItem` contra el costo exacto del lote del que salió el producto. Esto permite detectar márgenes reales incluso si compraste el mismo producto en 3 fechas distintas a 3 precios distintos.
+
+**Multi-moneda dinámica**
+El `DolarService` consulta la API del BCV cada 30 minutos y cachea el resultado. Los precios se fijan en USD; el total en Bolívares se calcula en el momento de la venta usando la tasa vigente. Si la API falla, el sistema cae automáticamente a una tasa manual configurada por el administrador.
+
+**Transacciones atómicas**
+Ventas y cancelaciones están envueltas en DB Transactions. Si una operación falla a mitad de camino, el stock no se modifica. En cancelaciones, el sistema rastrea exactamente de qué lotes salió la mercancía y restaura esas cantidades específicas.
+
+---
+
+## Stack tecnológico
+
+| Capa | Tecnología | Versión |
+|---|---|---|
+| Backend | PHP + Laravel | 8.3.1 / 13.5.0 |
+| Base de datos | MySQL / SQLite | ACID compliant |
+| Frontend | Vite + Alpine.js | 8.0.0 / 3.4.2 |
+| Estilos | Tailwind CSS | 3.1.0 |
+| HTTP client | Axios | 1.15.0 |
+| API externa | DolarAPI (BCV) | — |
+
+---
+
+## Instalación
+
+### Requisitos previos
+
+- PHP >= 8.3
+- Composer >= 2.x
+- Node.js >= 18 + NPM
+- MySQL 8 o SQLite
+
+### Setup
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/johnnyarondonp-web/eunoia-sistema.git
+cd eunoia-sistema
+
+# 2. Configurar variables de entorno
+cp .env.example .env
+```
+
+Edita `.env` con tu configuración de base de datos:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=eunoia
+DB_USERNAME=tu_usuario
+DB_PASSWORD=tu_contraseña
+```
+
+```bash
+# 3. Ejecutar setup automático
+# (instala dependencias PHP y JS, genera clave, corre migraciones y compila assets)
+composer run setup
+
+# 4. Iniciar servidor de desarrollo
+composer run dev
+```
+
+La aplicación estará disponible en `http://localhost:8000`.
+
+---
+
+## Estructura de archivos clave
+
+```
+app/
+├── Services/
+│   ├── LotDeductionService.php   # Lógica FIFO y trazabilidad de costos
+│   └── DolarService.php          # Obtención y respaldo de tasa cambiaria
+├── Http/Controllers/
+│   └── SaleController.php        # Orquestador de ventas y cancelaciones
+└── Models/
+    └── Expense.php               # Representa los lotes de entrada de mercancía
+```
+
+---
+
+## Módulos
 
 | Módulo | Descripción |
-| :--- | :--- |
-| **Dashboard** | Vista general con productos activos y estados de stock. |
-| **Productos** | Gestión de catálogo, control de stock mínimo y estados (pausado/activo). |
-| **Ventas** | Interfaz de facturación rápida con búsqueda de productos y cálculo de tasa. |
-| **Balance** | Análisis de ingresos vs gastos, exportación de datos y gestión de costos. |
-| **Configuración** | Control manual de tasas de cambio y perfiles de usuario. |
+|---|---|
+| Dashboard | Vista general de productos activos y estados de stock |
+| Productos | Catálogo, control de stock mínimo, estados activo/pausado |
+| Ventas | Facturación rápida con búsqueda de productos y cálculo de tasa en tiempo real |
+| Balance | Análisis ingresos vs. gastos, exportación de datos y gestión de costos |
+| Configuración | Control manual de tasa de cambio y perfiles de usuario |
 
 ---
 
-## ⚙️ Instalación y Configuración
+## Licencia
 
-1. **Clonar el repositorio:**
-   ```bash
-   git clone <url-repo>
-   ```
-
-2. **Ejecutar script de configuración automática:**
-   (Este comando instala dependencias de PHP y JS, genera llaves, corre migraciones y compila assets)
-   ```bash
-   composer run setup
-   ```
-
-3. **Iniciar entorno de desarrollo:**
-   ```bash
-   composer run dev
-   ```
-
----
-
-## 📁 Estructura de Lógica Clave
-
-- `app/Services/LotDeductionService.php`: El "corazón" del sistema. Maneja la lógica FIFO y la trazabilidad de costos.
-- `app/Services/DolarService.php`: Gestiona la obtención y el respaldo de la tasa cambiaria.
-- `app/Http/Controllers/SaleController.php`: Orquestador de las transacciones de venta y cancelaciones.
-- `app/Models/Expense.php`: Representa los lotes de entrada de mercancía.
-
----
-*Análisis y documentación generada para el sistema Eunoia.*
+Distribuido bajo la licencia [MIT](LICENSE).
