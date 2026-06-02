@@ -20,21 +20,15 @@
 
 ## Vista previa
 
-### Dashboard
-
-![Dashboard](.github/assets/eunoia-dashboard.png)
-
-### Venta
-
-![Venta](.github/assets/eunoia-ventas.png)
-
-### Balance
-
-![Balance](.github/assets/eunoia-balance.png)
-
-### Mobile
-
-![Mobile](.github/assets/eunoia-mobile.webp)
+<div align="center">
+  <img src=".github/assets/eunoia-dashboard.png" width="80%" alt="Dashboard"/>
+  <br/><br/>
+  <img src=".github/assets/eunoia-ventas.png" width="80%" alt="Venta"/>
+  <br/><br/>
+  <img src=".github/assets/eunoia-balance.png" width="80%" alt="Balance"/>
+  <br/><br/>
+  <img src=".github/assets/eunoia-mobile.webp" width="35%" alt="Mobile"/>
+</div>
 
 ---
 
