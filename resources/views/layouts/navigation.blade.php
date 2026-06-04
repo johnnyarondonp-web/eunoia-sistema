@@ -1,26 +1,27 @@
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-50 shadow-sm">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16 sm:h-20"> <div class="flex">
+        <div class="flex justify-between h-16 sm:h-20">
+            <div class="flex items-center">
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}" class="transition-opacity hover:opacity-80">
-                        <x-application-logo class="block h-12 w-auto" />
+                        <x-application-logo class="block h-10 sm:h-12 w-auto" />
                     </a>
                 </div>
-<div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="text-[10px] uppercase tracking-[0.2em] font-bold">
-        {{ __('Dashboard') }}
-    </x-nav-link>
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" class="text-[10px] uppercase tracking-[0.2em] font-bold">
+                        {{ __('Dashboard') }}
+                    </x-nav-link>
 
-    <x-nav-link :href="route('sales.create')" :active="request()->routeIs('sales.create')" class="text-[10px] uppercase tracking-[0.2em] font-bold">
-        {{ __('Ventas') }}
-    </x-nav-link>
-<x-nav-link :href="route('sales.index')" :active="request()->routeIs('sales.index')" class="text-[10px] uppercase tracking-[0.2em] font-bold">
-    {{ __('Registro de Ventas') }}
-</x-nav-link>
-<x-nav-link :href="route('expenses.balance')" :active="request()->routeIs('expenses.*')" class="text-[10px] uppercase tracking-[0.2em] font-bold">
-    {{ __('Balance') }}
-</x-nav-link>
-</div>
+                    <x-nav-link :href="route('sales.create')" :active="request()->routeIs('sales.create')" class="text-[10px] uppercase tracking-[0.2em] font-bold">
+                        {{ __('Ventas') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('sales.index')" :active="request()->routeIs('sales.index')" class="text-[10px] uppercase tracking-[0.2em] font-bold">
+                        {{ __('Registro de Ventas') }}
+                    </x-nav-link>
+                    <x-nav-link :href="route('expenses.balance')" :active="request()->routeIs('expenses.*')" class="text-[10px] uppercase tracking-[0.2em] font-bold">
+                        {{ __('Balance') }}
+                    </x-nav-link>
+                </div>
                 
             </div>
 

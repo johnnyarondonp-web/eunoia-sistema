@@ -152,11 +152,11 @@
         }
     </style>
 
-    <div class="py-6 sm:py-12 bg-white min-h-screen">
+    <div class="py-3 sm:py-12 bg-white min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {{-- Header --}}
-            <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 sm:mb-10 gap-4 sm:gap-6">
                 <div>
                     <div class="flex items-center gap-3 mb-1 flex-wrap">
                         <h2 class="font-cormorant text-3xl sm:text-4xl font-light tracking-wide text-eunoia-text" style="letter-spacing: 0.04em;">
@@ -291,7 +291,7 @@
             {{-- TOP SELLERS SECTION (shown on default/home only) --}}
             <div id="topSection">
                 <div class="flex items-center gap-3 mb-5">
-                    <h3 class="font-cormorant text-2xl font-light text-eunoia-text tracking-wide">Lo Más Vendido</h3>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-eunoia-text">Lo Más Vendido</h3>
                     <div class="flex-1 h-px bg-gray-100"></div>
                     <div class="flex gap-2">
                         <button type="button" onclick="setTopPeriod('week')" id="top-btn-week" class="filter-btn active text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-gray-200 shadow-sm">Semana</button>
@@ -305,7 +305,7 @@
                 </div>
                 {{-- Divider before the rest --}}
                 <div class="flex items-center gap-3 mb-5">
-                    <h3 class="font-cormorant text-2xl font-light text-eunoia-text tracking-wide">Todos los Productos</h3>
+                    <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-eunoia-text">Todos los Productos</h3>
                     <div class="flex-1 h-px bg-gray-100"></div>
                 </div>
             </div>

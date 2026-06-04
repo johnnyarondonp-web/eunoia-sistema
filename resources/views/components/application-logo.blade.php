@@ -1,1 +1,1 @@
-<img src="{{ asset('images/logo-eunoia.webp') }}" alt="Eunoia Logo" class="h-20 w-auto">
+<img src="{{ asset('images/logo-eunoia.webp') }}" alt="Eunoia Logo" class="h-20 sm:h-12 w-auto">
