@@ -5,8 +5,8 @@
         </h2>
     </x-slot>
 
-    <div class="py-3 sm:py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+    <div class="py-6 sm:py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5 sm:space-y-6">
 
             {{-- ── CARDS DE RESUMEN ─────────────────────────────────────────── --}}
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="balance-kpis">

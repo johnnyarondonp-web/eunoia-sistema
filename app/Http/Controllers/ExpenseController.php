@@ -143,7 +143,7 @@ class ExpenseController extends Controller
             });
 
             // Invalida cache de balance del mes actual
-            \Illuminate\Support\Facades\Cache::forget("balance_kpis_" . now()->month . "_" . now()->year);
+            \Illuminate\Support\Facades\Cache::forget("balance_kpis_" . now()->year . "_" . now()->month);
 
             return back()->with('success', '¡Compra registrada exitosamente!');
         } catch (\Exception $e) {

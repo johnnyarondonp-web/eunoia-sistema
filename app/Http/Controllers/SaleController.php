@@ -99,7 +99,7 @@ class SaleController extends Controller
             Cache::forget('top_products_year');
             
             // Invalida cache de balance del mes actual
-            Cache::forget("balance_kpis_" . now()->month . "_" . now()->year);
+            Cache::forget("balance_kpis_" . now()->year . "_" . now()->month);
 
             return redirect()->route('sales.index')->with('success', 'Venta registrada correctamente.');
         } catch (\Exception $e) {
@@ -143,7 +143,7 @@ class SaleController extends Controller
         Cache::forget('top_products_year');
         
         // Invalida cache de balance del mes en que ocurrió la venta
-        Cache::forget("balance_kpis_" . $sale->created_at->month . "_" . $sale->created_at->year);
+        Cache::forget("balance_kpis_" . $sale->created_at->year . "_" . $sale->created_at->month);
 
         return back()->with('success', 'Venta cancelada y stock restaurado.');
     }

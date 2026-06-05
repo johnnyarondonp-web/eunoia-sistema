@@ -171,8 +171,8 @@
         </div>
     </div>
 
-    <div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[2px]">
-        <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 border border-gray-100">
+    <div id="confirm-modal" class="hidden fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/20 backdrop-blur-[2px] p-4 sm:p-0 overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-md w-full sm:mx-4 border border-gray-100">
             <div class="text-center">
                 <div class="bg-indigo-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>

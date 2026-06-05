@@ -10,6 +10,9 @@
             transition: all 0.2s ease;
             cursor: pointer;
             white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         .filter-btn.active {
             background-color: #E88C8C;
@@ -207,28 +210,28 @@
 
             {{-- Filter Buttons --}}
             <div class="mb-4" id="filterArea">
-                <div class="flex overflow-x-auto no-scrollbar gap-2 pb-2 sm:flex-wrap" id="filterButtons">
+                <div class="grid grid-cols-3 gap-2 pb-2 sm:flex sm:flex-wrap" id="filterButtons">
                     <button onclick="setFilter('all', event)" id="btn-all"
-                            class="filter-btn text-[9px] font-black uppercase tracking-widest px-5 py-2 rounded-full border border-gray-200 bg-white shadow-sm">
+                            class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 sm:px-5 py-2 rounded-full border border-gray-200 bg-white shadow-sm justify-center">
                         Todos
                     </button>
                     <button onclick="setFilter('stock', event)" id="btn-stock"
-                            class="filter-btn text-[9px] font-black uppercase tracking-widest px-5 py-2 rounded-full border border-gray-200 bg-white shadow-sm">
+                            class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 sm:px-5 py-2 rounded-full border border-gray-200 bg-white shadow-sm justify-center">
                         Stock
                     </button>
 
                     {{-- ★ VENTAS: botón unificado (reemplaza Más Vendido + Menos Vendido) --}}
                     <button onclick="setFilter('ventas', event)" id="btn-ventas"
-                            class="filter-btn text-[9px] font-black uppercase tracking-widest px-5 py-2 rounded-full border border-gray-200 bg-white shadow-sm">
+                            class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 sm:px-5 py-2 rounded-full border border-gray-200 bg-white shadow-sm justify-center">
                         Ventas
                     </button>
 
                     <button onclick="setFilter('price', event)" id="btn-price"
-                            class="filter-btn text-[9px] font-black uppercase tracking-widest px-5 py-2 rounded-full border border-gray-200 bg-white shadow-sm">
+                            class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 sm:px-5 py-2 rounded-full border border-gray-200 bg-white shadow-sm justify-center">
                         Por Precio
                     </button>
                     <button onclick="setFilter('paused', event)" id="btn-paused"
-                            class="filter-btn text-[9px] font-black uppercase tracking-widest px-5 py-2 rounded-full border border-gray-200 bg-white shadow-sm">
+                            class="filter-btn text-[9px] font-black uppercase tracking-widest px-3 sm:px-5 py-2 rounded-full border border-gray-200 bg-white shadow-sm justify-center">
                         Pausados
                     </button>
                 </div>
